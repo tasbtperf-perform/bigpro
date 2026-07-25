@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Executive Dashboard Procurement — IAM Regional Sumbagteng</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+<style>
+:root{
+  --blue:#0D47A1; --blue-dark:#08306B; --blue-light:#E3F0FF; --blue-mid:#1976D2;
+  --bg:#F3F6FB; --card:#FFFFFF; --line:#E7ECF3;
+  --text:#16233F; --text2:#5B6B85; --text3:#8B98AC;
+  --green:#1E8E5A; --green-bg:#E7F6EE;
+  --yellow:#B8860B; --yellow-bg:#FFF6DF;
+  --red:#C62828; --red-bg:#FDECEC;
+  --radius:14px; --gap:18px;
+  --shadow:0 1px 2px rgba(16,38,73,.06), 0 4px 16px rgba(16,38,73,.05);
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);font-family:'Segoe UI',Roboto,-apple-system,BlinkMacSystemFont,Arial,sans-serif;color:var(--text);}
+.wrap{max-width:1500px;margin:0 auto;padding:20px;}
+
+/* ---------- HEADER ---------- */
+.header{
+  background:linear-gradient(120deg,var(--blue-dark),var(--blue) 60%,var(--blue-mid));
+  border-radius:var(--radius); padding:22px 26px; margin-bottom:var(--gap); color:#fff;
+  box-shadow:var(--shadow);
+}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;}
+.header-title h1{font-size:21px;margin:0 0 4px 0;font-weight:700;letter-spacing:.2px;}
+.header-title p{margin:0;font-size:12.5px;color:#CFE0F8;}
+.header-badge{font-size:11px;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:20px;display:inline-block;margin-top:8px;color:#fff;}
+
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+.filter-group{display:flex;flex-direction:column;gap:3px;min-width:120px;}
+.filter-group label{font-size:10.5px;color:#CFE0F8;text-transform:uppercase;letter-spacing:.5px;}
+.filter-group select,.filter-group input{
+  padding:7px 9px;border-radius:8px;border:1px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.12);color:#fff;font-size:12.5px;min-width:130px;
+}
+.filter-group select option{color:#16233F;}
+.filter-group input::placeholder{color:#DCE9FA;}
+.btn-reset{
+  align-self:flex-end; background:#fff; color:var(--blue-dark); border:none; border-radius:8px;
+  padding:8px 14px; font-size:12.5px; font-weight:600; cursor:pointer;
+}
+.btn-reset:hover{background:#EAF2FF;}
+
+/* ---------- SECTION TITLES ---------- */
+.section-title{font-size:14.5px;font-weight:700;color:var(--blue-dark);margin:26px 0 12px 2px;display:flex;align-items:center;gap:8px;}
+.section-title .dot{width:8px;height:8px;border-radius:2px;background:var(--blue-mid);display:inline-block;}
+
+/* ---------- KPI ---------- */
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
+.kpi-card{
+  background:var(--card);border-radius:var(--radius);padding:16px 16px 12px;box-shadow:var(--shadow);
+  border-top:3px solid var(--blue-mid); position:relative;
+}
+.kpi-card.good{border-top-color:var(--green);}
+.kpi-card.warn{border-top-color:var(--yellow);}
+.kpi-card.crit{border-top-color:var(--red);}
+.kpi-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.kpi-icon{width:34px;height:34px;border-radius:9px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.kpi-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-top:8px;}
+.kpi-value{font-size:24px;font-weight:800;color:var(--text);margin-top:2px;line-height:1.2;}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.kpi-branches{display:flex;gap:5px;margin-top:10px;flex-wrap:wrap;}
+.kpi-chip{
+  font-size:10.5px;background:var(--blue-light);color:var(--blue-dark);border:none;border-radius:6px;
+  padding:3px 6px;cursor:pointer;font-weight:600;transition:.15s;
+}
+.kpi-chip:hover{background:var(--blue-mid);color:#fff;}
+
+/* ---------- CHART GRID ---------- */
+.grid-2{display:grid;grid-template-columns:1.3fr 1fr;gap:var(--gap);}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);}
+.card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+.card-head h3{font-size:13.5px;margin:0;color:var(--text);font-weight:700;}
+.card-head span.hint{font-size:11px;color:var(--text3);font-weight:400;}
+.toggle-group{display:flex;background:var(--bg);border-radius:8px;padding:3px;gap:2px;}
+.toggle-btn{border:none;background:transparent;padding:5px 10px;font-size:11.5px;border-radius:6px;cursor:pointer;color:var(--text2);font-weight:600;}
+.toggle-btn.active{background:var(--blue-mid);color:#fff;}
+.chart-box{position:relative;}
+.chart-note{font-size:10.5px;color:var(--text3);margin-top:8px;font-style:italic;}
+
+/* ---------- ALERTS ---------- */
+.alert-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.alert-card{
+  background:var(--card);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);
+  cursor:pointer;transition:.15s;border-left:4px solid var(--text3);
+}
+.alert-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(16,38,73,.1);}
+.alert-card.crit{border-left-color:var(--red);}
+.alert-card.warn{border-left-color:var(--yellow);}
+.alert-card .a-title{font-size:11.5px;color:var(--text2);font-weight:600;display:flex;align-items:center;gap:6px;}
+.alert-card .a-value{font-size:26px;font-weight:800;margin-top:6px;}
+.alert-card.crit .a-value{color:var(--red);}
+.alert-card.warn .a-value{color:var(--yellow);}
+.alert-card .a-desc{font-size:10.5px;color:var(--text3);margin-top:4px;}
+
+/* ---------- TOC WATCHLIST ---------- */
+.toc-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.toc-table th{text-align:left;padding:9px 10px;background:var(--blue-light);color:var(--blue-dark);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;position:sticky;top:0;}
+.toc-table td{padding:9px 10px;border-bottom:1px solid var(--line);}
+.toc-table tbody tr{cursor:pointer;}
+.toc-table tbody tr:hover{background:var(--bg);}
+.badge{padding:3px 8px;border-radius:20px;font-size:10.5px;font-weight:700;display:inline-block;}
+.badge.crit{background:var(--red-bg);color:var(--red);}
+.badge.warn{background:var(--yellow-bg);color:var(--yellow);}
+.pagination{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--text2);}
+.pagination .pg-btns button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:12px;margin-left:6px;}
+.pagination .pg-btns button:disabled{opacity:.4;cursor:not-allowed;}
+.pagination .pg-btns button:not(:disabled):hover{background:var(--blue-light);}
+
+/* ---------- EXEC SUMMARY ---------- */
+.exec-summary{
+  background:linear-gradient(135deg,var(--blue-dark),var(--blue));
+  color:#fff;border-radius:var(--radius);padding:24px 28px;margin-top:30px;box-shadow:var(--shadow);
+}
+.exec-summary h3{margin:0 0 12px 0;font-size:15px;display:flex;align-items:center;gap:8px;}
+.exec-summary .points{display:grid;grid-template-columns:1fr 1fr;gap:10px 26px;font-size:12.8px;line-height:1.65;color:#EAF2FF;}
+.exec-summary .points li{margin-bottom:4px;}
+.exec-summary .foot{margin-top:14px;font-size:10.5px;color:#B9D3F5;border-top:1px solid rgba(255,255,255,.2);padding-top:10px;}
+
+/* ---------- MODAL ---------- */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:999;
+  align-items:center;justify-content:center;padding:20px;
+}
+.modal-overlay.show{display:flex;}
+.modal-box{
+  background:#fff;border-radius:14px;width:100%;max-width:920px;max-height:82vh;display:flex;flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+}
+.modal-head{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.modal-head h4{margin:0;font-size:14.5px;color:var(--blue-dark);}
+.modal-head .sub{font-size:11.5px;color:var(--text3);margin-top:2px;}
+.modal-close{background:var(--bg);border:none;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px;color:var(--text2);}
+.modal-body{padding:14px 22px;overflow:auto;}
+.modal-table{width:100%;border-collapse:collapse;font-size:12px;}
+.modal-table th{text-align:left;padding:7px 8px;background:var(--bg);color:var(--text2);font-size:10.5px;text-transform:uppercase;position:sticky;top:0;}
+.modal-table td{padding:7px 8px;border-bottom:1px solid var(--line);}
+.modal-summary{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:14px;}
+.modal-summary .msum{background:var(--bg);border-radius:10px;padding:10px 16px;}
+.modal-summary .msum .l{font-size:10px;color:var(--text3);text-transform:uppercase;}
+.modal-summary .msum .v{font-size:16px;font-weight:800;color:var(--blue-dark);}
+
+@media (max-width:1200px){
+  .kpi-row{grid-template-columns:repeat(3,1fr);}
+  .grid-2{grid-template-columns:1fr;}
+  .grid-3{grid-template-columns:1fr 1fr;}
+  .alert-row{grid-template-columns:1fr 1fr;}
+}
+@media (max-width:700px){
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+  .grid-3{grid-template-columns:1fr;}
+  .alert-row{grid-template-columns:1fr;}
+}
+/* ---------- REALISASI PROGRESS ---------- */
+.realisasi-big{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;}
+.realisasi-pct{font-size:36px;font-weight:800;color:var(--green);line-height:1;}
+.realisasi-pct.warn{color:var(--yellow);}
+.realisasi-pct.crit{color:var(--red);}
+.realisasi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-top:4px;}
+.progress-track{width:100%;height:16px;background:var(--bg);border-radius:20px;overflow:hidden;display:flex;margin:10px 0 14px;}
+.progress-fill-paid{height:100%;background:linear-gradient(90deg,#1E8E5A,#2FAE73);}
+.progress-fill-unpaid{height:100%;background:linear-gradient(90deg,#F9A825,#EF6C00);}
+.realisasi-legend{display:flex;gap:18px;flex-wrap:wrap;}
+.realisasi-legend .li{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.realisasi-legend .sw{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.realisasi-legend .v{font-weight:700;color:var(--text);}
+.branch-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;}
+.branch-row:last-child{border-bottom:none;}
+.branch-row:hover{background:var(--bg);}
+.branch-row .bname{width:90px;font-size:12px;font-weight:600;color:var(--text);flex-shrink:0;}
+.branch-row .btrack{flex:1;height:10px;background:var(--bg);border-radius:8px;overflow:hidden;display:flex;}
+.branch-row .bpct{width:52px;text-align:right;font-size:12px;font-weight:700;flex-shrink:0;}
+.branch-row .bval{width:150px;text-align:right;font-size:10.5px;color:var(--text3);flex-shrink:0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="header-top">
+      <div class="header-title">
+        <h1>📊 Executive Dashboard — Procurement &amp; Invoice Monitoring</h1>
+        <p>PT Telkom Akses — IAM Regional Sumbagteng (Pekanbaru · Batam · Padang · Bukittinggi · Dumai)</p>
+        <span class="header-badge" id="dataAsOf">Memuat data...</span>
+      </div>
+      <button class="btn-reset" id="refreshBtn" onclick="manualRefresh()">🔄 Refresh Data</button>
+    </div>
+    <div class="filters" id="filterBar"></div>
+  </div>
+
+  <div class="section-title"><span class="dot"></span>Executive KPI</div>
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="section-title"><span class="dot"></span>🔍 Pencarian Data (Nomor PO / Nama Mitra / Branch)</div>
+  <div class="card">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+      <input type="text" id="searchBox" placeholder="Ketik Nomor PO, Nama Mitra, atau Branch (Pekanbaru/Batam/Padang/Bukittinggi/Dumai)..." style="flex:1;min-width:280px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text2);cursor:pointer;">
+        <input type="checkbox" id="searchOutstandingOnly" style="width:15px;height:15px;"> Hanya Outstanding (belum dibayar)
+      </label>
+    </div>
+    <div id="searchResultInfo" style="font-size:11.5px;color:var(--text3);margin-bottom:8px;">Ketik kata kunci untuk mencari, atau centang "Hanya Outstanding" untuk melihat seluruh invoice yang belum dibayar (mengikuti filter di atas).</div>
+    <div style="overflow:auto;max-height:420px;">
+      <table class="toc-table" id="searchTable">
+        <thead><tr>
+          <th>Nomor PO</th><th>Branch</th><th>Mitra</th><th>Jenis</th><th>Deskripsi Pekerjaan</th><th>Status Procurement</th><th>Status Bayar</th><th>Nilai</th><th>Tgl PO</th><th>TOC</th>
+        </tr></thead>
+        <tbody id="searchBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-title"><span class="dot"></span>Aging Invoice (Outstanding)</div>
+  <div class="alert-row" id="agingRow"></div>
+
+  <div class="section-title"><span class="dot"></span>Trend Pembayaran Tagihan per Branch</div>
+  <div class="card">
+    <div class="card-head">
+      <h3 id="trendTitle">Trend Pembayaran Tagihan per Branch</h3>
+    </div>
+    <div class="chart-box" style="height:320px;"><canvas id="trendChart"></canvas></div>
+    <div class="chart-note">Klik titik pada grafik untuk melihat rincian transaksi bulan tersebut.</div>
+  </div>
+
+  <div class="section-title"><span class="dot"></span>Procurement per Area &amp; Jenis Pekerjaan</div>
+  <div class="card">
+    <div class="card-head">
+      <h3 id="areaTitle">Outstanding &amp; Nilai per Area</h3>
+      <div class="toggle-group" id="areaToggle">
+        <button class="toggle-btn active" data-v="area">Per Area</button>
+        <button class="toggle-btn" data-v="jenis">Trend per Jenis Pekerjaan</button>
+      </div>
+    </div>
+    <div class="card-head" id="jenisSubToggle" style="display:none;margin-top:-6px;">
+      <div class="toggle-group" id="jenisMetricToggle">
+        <button class="toggle-btn active" data-v="nilai">Nilai Procurement</button>
+        <button class="toggle-btn" data-v="outstanding">Outstanding</button>
+      </div>
+      <div class="toggle-group" id="jenisPeriodToggle">
+        <button class="toggle-btn active" data-v="bulanan">Bulanan</button>
+        <button class="toggle-btn" data-v="tahunan">Tahunan</button>
+      </div>
+    </div>
+    <div class="chart-box" style="height:280px;"><canvas id="areaChart"></canvas></div>
+    <div class="chart-note" id="areaChartNote">Klik bar untuk melihat rincian.</div>
+  </div>
+
+  <div class="section-title"><span class="dot"></span>Top 10 Mitra Kerja</div>
+  <div class="card">
+    <div class="card-head">
+      <h3 id="top10Title">Top 10 Mitra — Berdasarkan Jumlah Berkas Outstanding</h3>
+      <div class="toggle-group" id="top10Toggle">
+        <button class="toggle-btn active" data-v="outstanding">Jumlah Berkas Outstanding</button>
+        <button class="toggle-btn" data-v="nilai">Nilai Procurement</button>
+      </div>
+    </div>
+    <div class="chart-box" style="height:340px;"><canvas id="top10Chart"></canvas></div>
+    <div class="chart-note">Klik bar untuk melihat rincian invoice mitra.</div>
+  </div>
+
+  <div class="section-title"><span class="dot"></span>Status Invoice &amp; Realisasi Pembayaran</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head"><h3>Status Invoice</h3><span class="hint">Klik segmen untuk rincian</span></div>
+      <div class="chart-box" style="height:260px;"><canvas id="statusChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h3>Realisasi Pembayaran</h3>
+        <div class="toggle-group" id="realisasiToggle">
+          <button class="toggle-btn active" data-v="ringkasan">Ringkasan</button>
+          <button class="toggle-btn" data-v="branch">Per Branch</button>
+          <button class="toggle-btn" data-v="trend">Trend</button>
+        </div>
+      </div>
+      <div id="realisasiBox"></div>
+    </div>
+  </div>
+
+  <div class="section-title"><span class="dot"></span>Alert Dashboard</div>
+  <div class="alert-row" id="alertRow"></div>
+
+  <div class="section-title"><span class="dot"></span>⚠️ PO / Kontrak Mendekati &amp; Melebihi TOC <span style="font-weight:400;color:var(--text3);font-size:11.5px;">(1 baris = 1 Nomor PO, dipantau hingga BAST terbit — status hari dihitung per PO, tidak diakumulasi)</span></div>
+  <div class="card">
+    <div style="overflow:auto;max-height:480px;">
+      <table class="toc-table" id="tocTable">
+        <thead><tr>
+          <th>#</th><th>Nomor PO</th><th>Nama Mitra</th><th>Branch</th><th>Nilai PO</th><th>Tgl SP Terbit</th><th>TOC Ditetapkan</th><th>Durasi SP→TOC</th><th>Status</th>
+        </tr></thead>
+        <tbody id="tocBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span id="tocPageInfo"></span>
+      <div class="pg-btns">
+        <button id="tocPrev">‹ Sebelumnya</button>
+        <button id="tocNext">Berikutnya ›</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="exec-summary" id="execSummary"></div>
+
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><h4 id="modalTitle">Detail</h4><div class="sub" id="modalSub"></div></div>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+/* ================= CONFIG ================= */
+const BRANCHES = [
+  {code:'PKU',name:'Pekanbaru'},
+  {code:'BTM',name:'Batam'},
+  {code:'PDG',name:'Padang'},
+  {code:'BKT',name:'Bukittinggi'},
+  {code:'DUM',name:'Dumai'},
+];
+const BRANCH_NAME = Object.fromEntries(BRANCHES.map(b=>[b.code,b.name]));
+const MONTHS_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const STATUS_ORDER = ['Draft','Submitted','Procurement','Finance','Payment Entry','Cash & Bank','Lainnya'];
+const STAGE_RANK = {'Draft':0,'Submitted':1,'Procurement':2,'Finance':3,'Payment Entry':4,'Cash & Bank':5,'Lainnya':6};
+const STATUS_COLOR = {
+  'Draft':'#8B98AC','Submitted':'#5B8DEF','Procurement':'#1976D2','Finance':'#B8860B',
+  'Payment Entry':'#F9A825','Cash & Bank':'#1E8E5A','Lainnya':'#C9CFDA'
+};
+const AGING_ORDER = ['0-30 Hari','31-60 Hari','61-90 Hari','>90 Hari'];
+const AGING_COLOR = {'0-30 Hari':'#1E8E5A','31-60 Hari':'#F9A825','61-90 Hari':'#EF6C00','>90 Hari':'#C62828'};
+const BLUE_SCALE = ['#0D47A1','#1565C0','#1976D2','#42A5F5','#90CAF9','#0B3D91'];
+const JENIS_COLOR_SCALE = ['#0D47A1','#1E8E5A','#F9A825','#C62828','#6A1B9A','#00838F','#8B98AC'];
+const TODAY_LABEL = '17 Juli 2026';
+
+Chart.defaults.font.family = "'Segoe UI',Roboto,Arial,sans-serif";
+Chart.defaults.font.size = 11.5;
+Chart.defaults.color = '#5B6B85';
+
+/* ================= STATE ================= */
+const state = { y:'all', m:'all', b:'all', mitra:'all', jp:'all', sb:'all' };
+const view = { area:'area', top10:'outstanding', realisasi:'ringkasan', jenisMetric:'nilai', jenisPeriod:'bulanan' };
+const tocPage = { idx:0, size:10 };
+const charts = {};
+
+/* ================= HELPERS ================= */
+function fmtRp(n){
+  n = n||0;
+  if(Math.abs(n)>=1e9) return 'Rp '+(n/1e9).toFixed(2).replace('.',',')+' M';
+  if(Math.abs(n)>=1e6) return 'Rp '+(n/1e6).toFixed(1).replace('.',',')+' Jt';
+  return 'Rp '+n.toLocaleString('id-ID');
+}
+function fmtRpFull(n){ return 'Rp '+Math.round(n||0).toLocaleString('id-ID'); }
+function fmtNum(n){ return (n||0).toLocaleString('id-ID'); }
+function fmtPct(n){ return (n||0).toFixed(1)+'%'; }
+function fmtDate(s){
+  if(!s) return '-';
+  const d = new Date(s); const bln = MONTHS_SHORT[d.getMonth()];
+  return d.getDate()+' '+bln+' '+d.getFullYear();
+}
+
+function matchBase(r, opts){
+  opts = opts||{};
+  if(state.y!=='all' && !opts.skipY && r.y!=Number(state.y)) return false;
+  if(state.m!=='all' && !opts.skipM && r.m!=Number(state.m)) return false;
+  if(state.b!=='all' && !opts.skipB && r.b!==state.b) return false;
+  if(state.mitra!=='all' && !opts.skipMitra && r.mitra!==state.mitra) return false;
+  if(state.jp!=='all' && !opts.skipJp && r.jp!==state.jp) return false;
+  if(state.sb!=='all' && !opts.skipSb && r.sb!==state.sb) return false;
+  return true;
+}
+function getFiltered(opts){ return RAW.filter(r=>matchBase(r,opts||{})); }
+
+/**
+ * Agregasi baris item-level (per material/jasa) menjadi 1 baris per NOMOR PO.
+ * - nilai/bayar: dijumlahkan dari seluruh baris item PO tersebut (total nilai PO).
+ * - pay: UNPAID kalau ADA salah satu item yang belum dibayar (konservatif).
+ * - sb/sp: tahap PALING AWAL di antara seluruh item (PO belum "selesai" kalau
+ *   masih ada 1 item yang tertinggal di tahap sebelumnya).
+ * - sla: false kalau ADA item yang breach; null kalau ADA item yang belum bisa
+ *   dinilai (belum GR & belum jatuh tempo); true hanya kalau SEMUA item on-time.
+ * - aging/agingd: diambil dari item dengan agingd PALING BESAR (paling lama outstanding).
+ */
+function dedupeByPO(rows){
+  const map = {};
+  rows.forEach(r=>{
+    let g = map[r.po];
+    if(!g){
+      g = map[r.po] = {
+        po:r.po, b:r.b, mitra:r.mitra, jp:r.jp, y:r.y, m:r.m,
+        tglpo:r.tglpo, tglgr:r.tglgr, toc:r.toc, d2toc:r.d2toc,
+        desc:r.desc, jpo:r.jpo, prog:r.prog,
+        nilai:0, bayar:0, pay:'PAID',
+        sb:r.sb, sp:r.sp, _stageRank:(STAGE_RANK[r.sb]??6),
+        _slaFalse:false, _slaNull:false,
+        aging:r.aging, agingd:(r.agingd===null||r.agingd===undefined? -Infinity : r.agingd),
+        _lineCount:0
+      };
+    }
+    g.nilai += r.nilai;
+    g.bayar += (r.bayar||0);
+    g._lineCount++;
+    if(r.pay==='UNPAID') g.pay = 'UNPAID';
+    const rank = STAGE_RANK[r.sb] ?? 6;
+    if(rank < g._stageRank){ g._stageRank = rank; g.sb = r.sb; g.sp = r.sp; }
+    if(r.sla===false) g._slaFalse = true;
+    if(r.sla===null || r.sla===undefined) g._slaNull = true;
+    const rAgingd = (r.agingd===null||r.agingd===undefined) ? -Infinity : r.agingd;
+    if(rAgingd > g.agingd){ g.agingd = rAgingd; g.aging = r.aging; }
+    if(r.tglgr && (!g.tglgr || r.tglgr > g.tglgr)) g.tglgr = r.tglgr;
+  });
+  return Object.values(map).map(g=>{
+    g.sla = g._slaFalse ? false : (g._slaNull ? null : true);
+    if(g.agingd===-Infinity) g.agingd = null;
+    delete g._slaFalse; delete g._slaNull; delete g._stageRank;
+    return g;
+  });
+}
+
+/* ================= FILTER BAR ================= */
+function buildFilterBar(){
+  const years = [...new Set(RAW.map(r=>r.y))].sort();
+  const mitras = [...new Set(RAW.map(r=>r.mitra))].sort();
+  const jps = [...new Set(RAW.map(r=>r.jp))].sort();
+
+  const el = document.getElementById('filterBar');
+  el.innerHTML = `
+    <div class="filter-group"><label>Tahun</label>
+      <select id="f_y"><option value="all">Semua Tahun</option>${years.map(y=>`<option value="${y}">${y}</option>`).join('')}</select>
+    </div>
+    <div class="filter-group"><label>Bulan</label>
+      <select id="f_m"><option value="all">Semua Bulan</option>${MONTHS_ID.map((mn,i)=>`<option value="${i+1}">${mn}</option>`).join('')}</select>
+    </div>
+    <div class="filter-group"><label>Area / Branch</label>
+      <select id="f_b"><option value="all">Semua Branch</option>${BRANCHES.map(b=>`<option value="${b.code}">${b.name}</option>`).join('')}</select>
+    </div>
+    <div class="filter-group"><label>Mitra Kerja</label>
+      <input list="mitraList" id="f_mitra" placeholder="Semua Mitra" autocomplete="off">
+      <datalist id="mitraList">${mitras.map(m=>`<option value="${m}">`).join('')}</datalist>
+    </div>
+    <div class="filter-group"><label>Jenis Pekerjaan</label>
+      <select id="f_jp"><option value="all">Semua Jenis</option>${jps.map(j=>`<option value="${j}">${j}</option>`).join('')}</select>
+    </div>
+    <div class="filter-group"><label>Status Invoice</label>
+      <select id="f_sb"><option value="all">Semua Status</option>${STATUS_ORDER.map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+    </div>
+    <button class="btn-reset" id="f_reset">↺ Reset Filter</button>
+  `;
+  document.getElementById('f_y').onchange = e=>{state.y=e.target.value; renderAll();};
+  document.getElementById('f_m').onchange = e=>{state.m=e.target.value; renderAll();};
+  document.getElementById('f_b').onchange = e=>{state.b=e.target.value; renderAll();};
+  document.getElementById('f_jp').onchange = e=>{state.jp=e.target.value; renderAll();};
+  document.getElementById('f_sb').onchange = e=>{state.sb=e.target.value; renderAll();};
+  document.getElementById('f_mitra').addEventListener('change', e=>{
+    const v=e.target.value.trim();
+    state.mitra = mitras.includes(v) ? v : 'all';
+    renderAll();
+  });
+  document.getElementById('f_reset').onclick = ()=>{
+    state.y='all';state.m='all';state.b='all';state.mitra='all';state.jp='all';state.sb='all';
+    document.getElementById('f_y').value='all';
+    document.getElementById('f_m').value='all';
+    document.getElementById('f_b').value='all';
+    document.getElementById('f_mitra').value='';
+    document.getElementById('f_jp').value='all';
+    document.getElementById('f_sb').value='all';
+    renderAll();
+  };
+}
+
+/* ================= KPI ================= */
+function computeKpiForRows(rows){
+  const totalProc = rows.length;
+  const totalNilai = rows.reduce((s,r)=>s+r.nilai,0);
+  const unpaid = rows.filter(r=>r.pay==='UNPAID');
+  const paid = rows.filter(r=>r.pay==='PAID');
+  const outstandingNilai = unpaid.reduce((s,r)=>s+r.nilai,0);
+  const paidNilai = paid.reduce((s,r)=>s+(r.bayar||r.nilai),0);
+  const vendorAktif = new Set(rows.map(r=>r.mitra)).size;
+  const slaRows = rows.filter(r=>r.sla!==null && r.sla!==undefined);
+  const slaPct = slaRows.length? (slaRows.filter(r=>r.sla).length/slaRows.length*100) : 0;
+  return {totalProc,totalNilai,unpaidCount:unpaid.length,outstandingNilai,paidCount:paid.length,paidNilai,vendorAktif,slaPct};
+}
+
+const KPI_DEFS = [
+  {key:'totalProc', label:'Total Procurement', icon:'📦', unit:'item', cls:()=> ''},
+  {key:'totalNilai', label:'Total Nilai Procurement', icon:'💰', unit:'rp', cls:()=> ''},
+  {key:'unpaidCount', label:'Outstanding Invoice', icon:'⏳', unit:'item2', cls:(v,all)=> (v/ (all.totalProc||1) > .4 ? 'crit' : (v/(all.totalProc||1) > .25 ? 'warn':''))},
+  {key:'paidCount', label:'Paid Invoice', icon:'✅', unit:'item3', cls:()=> 'good'},
+  {key:'vendorAktif', label:'Vendor Aktif', icon:'🤝', unit:'vendor', cls:()=> ''},
+  {key:'slaPct', label:'SLA Procurement', icon:'🎯', unit:'pct', cls:(v)=> v>=80?'good':(v>=60?'warn':'crit')},
+];
+
+function renderKPI(){
+  const filtered = dedupeByPO(getFiltered());
+  const all = computeKpiForRows(filtered);
+  const el = document.getElementById('kpiRow');
+  el.innerHTML = KPI_DEFS.map(def=>{
+    const v = all[def.key];
+    let valueStr='', subStr='';
+    if(def.key==='totalNilai'){ valueStr = fmtRp(v); subStr = fmtNum(all.totalProc)+' Nomor PO'; }
+    else if(def.key==='totalProc'){ valueStr = fmtNum(v)+' PO'; subStr = fmtRp(all.totalNilai)+' total nilai'; }
+    else if(def.key==='unpaidCount'){ valueStr = fmtNum(v)+' PO'; subStr = fmtRp(all.outstandingNilai)+' outstanding'; }
+    else if(def.key==='paidCount'){ valueStr = fmtNum(v)+' PO'; subStr = fmtRp(all.paidNilai)+' terbayar'; }
+    else if(def.key==='vendorAktif'){
+      const totalRegional = new Set(RAW.map(r=>r.mitra)).size;
+      valueStr = fmtNum(v)+' Mitra';
+      subStr = `dari total ${totalRegional} mitra kerja aktif di Regional Sumbagteng`;
+    }
+    else if(def.key==='slaPct'){ valueStr = fmtPct(v); subStr = 'PO selesai (GR) sesuai TOC (PO + 30 hari)'; }
+    const cls = def.cls(v, all);
+    const chips = BRANCHES.map(b=>{
+      const bRows = filtered.filter(r=>r.b===b.code);
+      const bk = computeKpiForRows(bRows);
+      let bv;
+      if(def.key==='totalNilai') bv = fmtRp(bk.totalNilai);
+      else if(def.key==='totalProc') bv = fmtNum(bk.totalProc);
+      else if(def.key==='unpaidCount') bv = fmtNum(bk.unpaidCount);
+      else if(def.key==='paidCount') bv = fmtNum(bk.paidCount);
+      else if(def.key==='vendorAktif') bv = fmtNum(bk.vendorAktif);
+      else if(def.key==='slaPct') bv = fmtPct(bk.slaPct);
+      return `<button class="kpi-chip" onclick="drillKPI('${def.key}','${b.code}')">${b.code} ${bv}</button>`;
+    }).join('');
+    return `<div class="kpi-card ${cls}">
+      <div class="kpi-top"><div class="kpi-icon">${def.icon}</div></div>
+      <div class="kpi-label">${def.label}</div>
+      <div class="kpi-value">${valueStr}</div>
+      <div class="kpi-sub">${subStr}</div>
+      <div class="kpi-branches">${chips}</div>
+    </div>`;
+  }).join('');
+}
+
+function drillKPI(key, branchCode){
+  const filtered = dedupeByPO(getFiltered()).filter(r=>r.b===branchCode);
+  let rows, title, cols;
+  const bname = BRANCH_NAME[branchCode];
+  if(key==='totalProc' || key==='totalNilai'){
+    rows = filtered; title = `Rincian Procurement — ${bname}`;
+  } else if(key==='unpaidCount'){
+    rows = filtered.filter(r=>r.pay==='UNPAID'); title = `Outstanding Invoice — ${bname}`;
+  } else if(key==='paidCount'){
+    rows = filtered.filter(r=>r.pay==='PAID'); title = `Paid Invoice — ${bname}`;
+  } else if(key==='vendorAktif'){
+    openModalVendorAgg(filtered, `Vendor Aktif — ${bname}`); return;
+  } else if(key==='slaPct'){
+    rows = filtered.filter(r=>r.sla===false); title = `PO Tidak Memenuhi SLA — ${bname}`;
+  }
+  openModalRows(rows, title, `${rows.length} PO`);
+}
+
+/* ================= TREND ================= */
+function monthKeyList(rows){
+  const s = new Set(rows.map(r=>r.y+'-'+String(r.m).padStart(2,'0')));
+  return [...s].sort();
+}
+function renderTrend(){
+  const rows = getFiltered({skipM:true});
+  const keys = monthKeyList(rows);
+  const labels = keys.map(k=>{
+    const [y,m]=k.split('-'); return MONTHS_SHORT[Number(m)-1]+" '"+y.slice(2);
+  });
+
+  const datasets = BRANCHES.map((b,i)=>{
+    const vals = keys.map(k=>{
+      const [y,m]=k.split('-');
+      return rows.filter(r=>r.b===b.code && r.y==y && r.m==Number(m) && r.pay==='PAID').reduce((s,r)=>s+(r.bayar||r.nilai),0);
+    });
+    return {label:b.name, data:vals, borderColor:BLUE_SCALE[i], backgroundColor:BLUE_SCALE[i]+'20', fill:false, tension:.3, pointRadius:3, pointHoverRadius:6};
+  });
+
+  const ctx = document.getElementById('trendChart');
+  if(charts.trend) charts.trend.destroy();
+  charts.trend = new Chart(ctx, {
+    type:'line',
+    data:{labels, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{display:true, position:'bottom', labels:{boxWidth:10,boxHeight:10}},
+        tooltip:{callbacks:{label:(c)=> c.dataset.label+': '+fmtRpFull(c.parsed.y)}}
+      },
+      scales:{ y:{ticks:{callback:(v)=>fmtRp(v)}}, x:{grid:{display:false}} },
+      onClick:(evt, elements)=>{
+        if(!elements.length) return;
+        const idx = elements[0].index;
+        const dsIdx = elements[0].datasetIndex;
+        const [y,m] = keys[idx].split('-');
+        const bcode = BRANCHES[dsIdx].code;
+        let sub = rows.filter(r=>r.y==y && r.m==Number(m) && r.b===bcode && r.pay==='PAID');
+        let title = `Transaksi ${MONTHS_ID[Number(m)-1]} ${y} — ${BRANCH_NAME[bcode]} (Paid)`;
+        openModalRows(sub, title, `${sub.length} item · ${fmtRp(sub.reduce((s,r)=>s+r.nilai,0))}`);
+      }
+    }
+  });
+}
+
+/* ================= AREA CHART ================= */
+function renderArea(){
+  const rows = getFiltered();
+  const ctx = document.getElementById('areaChart');
+  if(charts.area) charts.area.destroy();
+
+  const subToggle = document.getElementById('jenisSubToggle');
+  const note = document.getElementById('areaChartNote');
+
+  if(view.area==='jenis'){
+    subToggle.style.display = 'flex';
+    subToggle.style.justifyContent = 'space-between';
+    subToggle.style.flexWrap = 'wrap';
+    subToggle.style.gap = '8px';
+    const metricLabel = view.jenisMetric==='outstanding' ? 'Outstanding' : 'Nilai Procurement';
+    const periodLabel = view.jenisPeriod==='tahunan' ? 'Tahunan' : 'Bulanan';
+    document.getElementById('areaTitle').textContent = `Trend ${metricLabel} per Jenis Pekerjaan — ${periodLabel}`;
+    note.textContent = 'Klik titik pada garis untuk melihat rincian periode & jenis pekerjaan tersebut.';
+
+    const trendRows = getFiltered({skipM:true, skipY:true});
+    const jps = [...new Set(trendRows.map(r=>r.jp))].sort();
+
+    let keys, labels;
+    if(view.jenisPeriod==='tahunan'){
+      keys = [...new Set(trendRows.map(r=>String(r.y)))].sort();
+      labels = keys;
+    } else {
+      keys = monthKeyList(trendRows);
+      labels = keys.map(k=>{ const [y,m]=k.split('-'); return MONTHS_SHORT[Number(m)-1]+" '"+y.slice(2); });
+    }
+
+    function valueFor(jp, key){
+      let matched;
+      if(view.jenisPeriod==='tahunan'){
+        matched = trendRows.filter(r=>r.jp===jp && String(r.y)===key);
+      } else {
+        const [y,m] = key.split('-');
+        matched = trendRows.filter(r=>r.jp===jp && r.y==y && r.m==Number(m));
+      }
+      if(view.jenisMetric==='outstanding') matched = matched.filter(r=>r.pay==='UNPAID');
+      return matched.reduce((s,r)=>s+r.nilai,0);
+    }
+
+    const datasets = jps.map((jp,i)=>({
+      label: jp,
+      data: keys.map(k=>valueFor(jp,k)),
+      borderColor: JENIS_COLOR_SCALE[i % JENIS_COLOR_SCALE.length],
+      backgroundColor: JENIS_COLOR_SCALE[i % JENIS_COLOR_SCALE.length]+'20',
+      fill:false, tension:.3, pointRadius:3, pointHoverRadius:6
+    }));
+
+    charts.area = new Chart(ctx, {
+      type:'line',
+      data:{labels, datasets},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index', intersect:false},
+        plugins:{
+          legend:{display:true, position:'bottom', labels:{boxWidth:10,boxHeight:10}},
+          tooltip:{callbacks:{label:(c)=> c.dataset.label+': '+fmtRpFull(c.parsed.y)}}
+        },
+        scales:{ y:{ticks:{callback:(v)=>fmtRp(v)}}, x:{grid:{display:false}} },
+        onClick:(evt,els)=>{
+          if(!els.length) return;
+          const idx = els[0].index;
+          const dsIdx = els[0].datasetIndex;
+          const jp = jps[dsIdx];
+          const key = keys[idx];
+          let sub;
+          let title;
+          if(view.jenisPeriod==='tahunan'){
+            sub = trendRows.filter(r=>r.jp===jp && String(r.y)===key);
+            title = `${jp} — Tahun ${key}`;
+          } else {
+            const [y,m] = key.split('-');
+            sub = trendRows.filter(r=>r.jp===jp && r.y==y && r.m==Number(m));
+            title = `${jp} — ${MONTHS_ID[Number(m)-1]} ${y}`;
+          }
+          if(view.jenisMetric==='outstanding'){ sub = sub.filter(r=>r.pay==='UNPAID'); title += ' (Outstanding)'; }
+          openModalRows(sub, title, `${sub.length} item · ${fmtRp(sub.reduce((s,r)=>s+r.nilai,0))}`);
+        }
+      }
+    });
+    return;
+  }
+
+  subToggle.style.display = 'none';
+  note.textContent = 'Klik bar (Outstanding atau Nilai Total) untuk melihat rincian.';
+  document.getElementById('areaTitle').textContent = 'Outstanding & Nilai per Area';
+  const outstandingVals = BRANCHES.map(b=> rows.filter(r=>r.b===b.code && r.pay==='UNPAID').reduce((s,r)=>s+r.nilai,0));
+  const nilaiVals = BRANCHES.map(b=> rows.filter(r=>r.b===b.code).reduce((s,r)=>s+r.nilai,0));
+  charts.area = new Chart(ctx, {
+    type:'bar',
+    data:{labels:BRANCHES.map(b=>b.name), datasets:[
+      {label:'Outstanding', data:outstandingVals, backgroundColor:'#F9A825', borderRadius:6, maxBarThickness:34},
+      {label:'Nilai Total', data:nilaiVals, backgroundColor:'#1976D2', borderRadius:6, maxBarThickness:34}
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:true, position:'bottom', labels:{boxWidth:10,boxHeight:10}}, tooltip:{callbacks:{label:(c)=> c.dataset.label+': '+fmtRpFull(c.parsed.y)}}},
+      scales:{y:{ticks:{callback:(v)=>fmtRp(v)}}, x:{grid:{display:false}}},
+      onClick:(evt,els)=>{
+        if(!els.length) return;
+        const b = BRANCHES[els[0].index];
+        const isOutstanding = els[0].datasetIndex===0;
+        let sub = rows.filter(r=>r.b===b.code);
+        if(isOutstanding) sub = sub.filter(r=>r.pay==='UNPAID');
+        openModalRows(sub, `${isOutstanding?'Outstanding':'Procurement'} — ${b.name}`, `${sub.length} item · ${fmtRp(sub.reduce((s,r)=>s+r.nilai,0))}`);
+      }
+    }
+  });
+}
+
+/* ================= TOP 10 MITRA ================= */
+function renderTop10(){
+  const rows = dedupeByPO(getFiltered());
+  document.getElementById('top10Title').textContent = view.top10==='outstanding' ? 'Top 10 Mitra — Berdasarkan Jumlah Berkas (PO) Outstanding' : 'Top 10 Mitra — Berdasarkan Nilai Procurement';
+  const mitraSet = [...new Set(rows.map(r=>r.mitra))];
+  let agg = mitraSet.map(m=>{
+    const mr = rows.filter(r=>r.mitra===m);
+    const unpaidRows = mr.filter(r=>r.pay==='UNPAID');
+    const outstandingCount = unpaidRows.length;
+    const outstandingNilai = unpaidRows.reduce((s,r)=>s+r.nilai,0);
+    const nilai = mr.reduce((s,r)=>s+r.nilai,0);
+    return {mitra:m, outstandingCount, outstandingNilai, nilai};
+  });
+  agg = agg.filter(a=> (view.top10==='outstanding'?a.outstandingCount:a.nilai) > 0);
+  agg.sort((a,b)=> (view.top10==='outstanding'?b.outstandingCount-a.outstandingCount:b.nilai-a.nilai));
+  agg = agg.slice(0,10);
+
+  const ctx = document.getElementById('top10Chart');
+  if(charts.top10) charts.top10.destroy();
+  charts.top10 = new Chart(ctx, {
+    type:'bar',
+    data:{labels:agg.map(a=>a.mitra), datasets:[{
+      label:view.top10==='outstanding'?'Jumlah PO Outstanding':'Nilai Procurement',
+      data:agg.map(a=>view.top10==='outstanding'?a.outstandingCount:a.nilai),
+      backgroundColor:'#1565C0', borderRadius:6, maxBarThickness:22
+    }]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:(c)=> view.top10==='outstanding' ? (fmtNum(c.parsed.x)+' PO · '+fmtRp(agg[c.dataIndex].outstandingNilai)) : fmtRpFull(c.parsed.x) }}},
+      scales:{x:{ticks:{callback:(v)=> view.top10==='outstanding' ? fmtNum(v) : fmtRp(v)}}, y:{grid:{display:false}, ticks:{autoSkip:false}}},
+      onClick:(evt,els)=>{
+        if(!els.length) return;
+        const a = agg[els[0].index];
+        let sub = rows.filter(r=>r.mitra===a.mitra);
+        if(view.top10==='outstanding') sub = sub.filter(r=>r.pay==='UNPAID');
+        openModalRows(sub, `${a.mitra}`, view.top10==='outstanding' ? `${a.outstandingCount} PO outstanding · ${fmtRp(a.outstandingNilai)}` : `${sub.length} PO · ${fmtRp(a.nilai)}`);
+      }
+    }
+  });
+}
+
+/* ================= STATUS DONUT ================= */
+function renderStatus(){
+  const rows = getFiltered();
+  const counts = STATUS_ORDER.map(s=> rows.filter(r=>r.sb===s).length);
+  const ctx = document.getElementById('statusChart');
+  if(charts.status) charts.status.destroy();
+  charts.status = new Chart(ctx, {
+    type:'doughnut',
+    data:{labels:STATUS_ORDER, datasets:[{data:counts, backgroundColor:STATUS_ORDER.map(s=>STATUS_COLOR[s]), borderWidth:2, borderColor:'#fff'}]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{legend:{position:'bottom', labels:{boxWidth:10,boxHeight:10,padding:10}},
+        tooltip:{callbacks:{label:(c)=> c.label+': '+fmtNum(c.parsed)+' item'}}},
+      onClick:(evt,els)=>{
+        if(!els.length) return;
+        const s = STATUS_ORDER[els[0].index];
+        const sub = rows.filter(r=>r.sb===s);
+        openModalRows(sub, `Status Invoice — ${s}`, `${sub.length} item`);
+      }
+    }
+  });
+}
+
+/* ================= REALISASI PEMBAYARAN ================= */
+function renderRealisasi(){
+  const rows = getFiltered();
+  const totalNilai = rows.reduce((s,r)=>s+r.nilai,0);
+  const paidRows = rows.filter(r=>r.pay==='PAID');
+  const unpaidRows = rows.filter(r=>r.pay==='UNPAID');
+  const paidNilai = paidRows.reduce((s,r)=>s+(r.bayar||r.nilai),0);
+  const unpaidNilai = unpaidRows.reduce((s,r)=>s+r.nilai,0);
+  const pct = totalNilai? (paidNilai/totalNilai*100) : 0;
+  const pctCls = pct>=80?'':(pct>=50?'warn':'crit');
+  window._realisasiRows = {paid:paidRows, unpaid:unpaidRows};
+
+  const header = `
+    <div class="realisasi-big">
+      <div>
+        <div class="realisasi-pct ${pctCls}">${fmtPct(pct)}</div>
+        <div class="realisasi-label">Realisasi Pembayaran</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:15px;font-weight:700;color:var(--text);">${fmtRp(totalNilai)}</div>
+        <div class="realisasi-label">Total Nilai Procurement</div>
+      </div>
+    </div>`;
+
+  if(view.realisasi==='branch'){
+    window._realisasiBranchRows = {};
+    const rowsHtml = BRANCHES.map(b=>{
+      const br = rows.filter(r=>r.b===b.code);
+      const brTotal = br.reduce((s,r)=>s+r.nilai,0);
+      const brPaid = br.filter(r=>r.pay==='PAID').reduce((s,r)=>s+(r.bayar||r.nilai),0);
+      const brPct = brTotal? (brPaid/brTotal*100) : 0;
+      const cls = brPct>=80?'#1E8E5A':(brPct>=50?'#F9A825':'#C62828');
+      window._realisasiBranchRows[b.code] = br;
+      return `<div class="branch-row" onclick="openRealisasiBranchDetail('${b.code}')">
+        <div class="bname">${b.name}</div>
+        <div class="btrack"><div style="width:${brPct}%;background:${cls};height:100%;"></div></div>
+        <div class="bpct" style="color:${cls};">${fmtPct(brPct)}</div>
+        <div class="bval">${fmtRp(brPaid)} / ${fmtRp(brTotal)}</div>
+      </div>`;
+    }).join('');
+    document.getElementById('realisasiBox').innerHTML = header + `<div style="margin-top:10px;">${rowsHtml}</div>
+      <div class="chart-note">Klik baris branch untuk melihat rincian seluruh PO branch tersebut.</div>`;
+    return;
+  }
+
+  if(view.realisasi==='trend'){
+    const trendRows = getFiltered({skipM:true});
+    const keys = monthKeyList(trendRows);
+    const labels = keys.map(k=>{ const [y,m]=k.split('-'); return MONTHS_SHORT[Number(m)-1]+" '"+y.slice(2); });
+    const pctVals = keys.map(k=>{
+      const [y,m]=k.split('-');
+      const mr = trendRows.filter(r=>r.y==y && r.m==Number(m));
+      const mTotal = mr.reduce((s,r)=>s+r.nilai,0);
+      const mPaid = mr.filter(r=>r.pay==='PAID').reduce((s,r)=>s+(r.bayar||r.nilai),0);
+      return mTotal? (mPaid/mTotal*100) : 0;
+    });
+    document.getElementById('realisasiBox').innerHTML = header + `<div style="height:200px;margin-top:10px;"><canvas id="realisasiTrendChart"></canvas></div>
+      <div class="chart-note">Klik titik untuk melihat rincian bulan tersebut.</div>`;
+    const ctx = document.getElementById('realisasiTrendChart');
+    if(charts.realisasiTrend) charts.realisasiTrend.destroy();
+    charts.realisasiTrend = new Chart(ctx, {
+      type:'line',
+      data:{labels, datasets:[{label:'Realisasi %', data:pctVals, borderColor:'#1E8E5A', backgroundColor:'#1E8E5A20', fill:true, tension:.3, pointRadius:3, pointHoverRadius:6}]},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}, tooltip:{callbacks:{label:(c)=>fmtPct(c.parsed.y)}}},
+        scales:{y:{min:0, max:100, ticks:{callback:(v)=>v+'%'}}, x:{grid:{display:false}}},
+        onClick:(evt,els)=>{
+          if(!els.length) return;
+          const idx = els[0].index;
+          const [y,m] = keys[idx].split('-');
+          const sub = trendRows.filter(r=>r.y==y && r.m==Number(m));
+          openModalRows(sub, `Transaksi ${MONTHS_ID[Number(m)-1]} ${y}`, `${sub.length} item · Realisasi ${fmtPct(pctVals[idx])}`);
+        }
+      }
+    });
+    return;
+  }
+
+  // default: ringkasan
+  const paidPctW = totalNilai? (paidNilai/totalNilai*100):0;
+  const unpaidPctW = totalNilai? (unpaidNilai/totalNilai*100):0;
+  document.getElementById('realisasiBox').innerHTML = header + `
+    <div class="progress-track" style="cursor:pointer;" title="Klik untuk lihat rincian">
+      <div class="progress-fill-paid" style="width:${paidPctW}%;" onclick="openRealisasiDetail('paid')"></div>
+      <div class="progress-fill-unpaid" style="width:${unpaidPctW}%;" onclick="openRealisasiDetail('unpaid')"></div>
+    </div>
+    <div class="realisasi-legend">
+      <div class="li" style="cursor:pointer;" onclick="openRealisasiDetail('paid')">
+        <span class="sw" style="background:#1E8E5A;"></span>Sudah Dibayar (${fmtNum(paidRows.length)} PO): <span class="v">${fmtRp(paidNilai)}</span>
+      </div>
+      <div class="li" style="cursor:pointer;" onclick="openRealisasiDetail('unpaid')">
+        <span class="sw" style="background:#F9A825;"></span>Outstanding (${fmtNum(unpaidRows.length)} PO): <span class="v">${fmtRp(unpaidNilai)}</span>
+      </div>
+    </div>
+    <div class="chart-note">Klik bar hijau/kuning atau keterangan di bawahnya untuk melihat daftar Nomor PO.</div>
+  `;
+}
+function openRealisasiDetail(type){
+  const rows = window._realisasiRows ? window._realisasiRows[type] : [];
+  const title = type==='paid' ? 'Nomor PO — Sudah Dibayar (Cash & Bank)' : 'Nomor PO — Outstanding (Belum Dibayar)';
+  openModalRows(rows, title, `${rows.length} PO · ${fmtRp(rows.reduce((s,r)=>s+r.nilai,0))}`);
+}
+function openRealisasiBranchDetail(bcode){
+  const rows = window._realisasiBranchRows ? (window._realisasiBranchRows[bcode]||[]) : [];
+  openModalRows(rows, `Realisasi Pembayaran — ${BRANCH_NAME[bcode]}`, `${rows.length} PO · ${fmtRp(rows.reduce((s,r)=>s+r.nilai,0))}`);
+}
+
+/* ================= AGING BAR ================= */
+function renderAging(){
+  const rows = getFiltered().filter(r=>r.pay==='UNPAID');
+  const el = document.getElementById('agingRow');
+  const iconFor = {'0-30 Hari':'🟢','31-60 Hari':'🟡','61-90 Hari':'🟠','>90 Hari':'🔴'};
+  const clsFor = {'0-30 Hari':'', '31-60 Hari':'warn', '61-90 Hari':'warn', '>90 Hari':'crit'};
+  el.innerHTML = AGING_ORDER.map(a=>{
+    const sub = rows.filter(r=>r.aging===a);
+    const nilai = sub.reduce((s,r)=>s+r.nilai,0);
+    return `<div class="alert-card ${clsFor[a]}" onclick="openAgingDetail('${a}')">
+      <div class="a-title">${iconFor[a]} ${a}</div>
+      <div class="a-value" style="color:${AGING_COLOR[a]};">${fmtNum(sub.length)}</div>
+      <div class="a-desc">${fmtRp(nilai)} outstanding</div>
+    </div>`;
+  }).join('');
+}
+function openAgingDetail(bucket){
+  const rows = getFiltered().filter(r=>r.pay==='UNPAID' && r.aging===bucket);
+  openModalRows(rows, `Aging Invoice — ${bucket}`, `${rows.length} item · ${fmtRp(rows.reduce((s,r)=>s+r.nilai,0))}`);
+}
+
+/* ================= ALERTS ================= */
+function renderAlerts(){
+  const rows = getFiltered();
+  const unpaid = rows.filter(r=>r.pay==='UNPAID');
+  const over60 = unpaid.filter(r=> r.agingd!=null && r.agingd>60);
+  const belumProses = rows.filter(r=>r.sb==='Draft');
+  const belumSubmit = rows.filter(r=>r.sp==='PEMBERKASAN DI MITRA');
+
+  const mitraSla = {};
+  rows.filter(r=>r.sla!==null && r.sla!==undefined).forEach(r=>{
+    mitraSla[r.mitra] = mitraSla[r.mitra]||{total:0,ok:0};
+    mitraSla[r.mitra].total++; if(r.sla) mitraSla[r.mitra].ok++;
+  });
+  const slaBelow50 = Object.entries(mitraSla).map(([m,v])=>({mitra:m, pct:v.ok/v.total*100, total:v.total}))
+    .filter(x=>x.pct<50).sort((a,b)=>a.pct-b.pct);
+
+  const defs = [
+    {id:'a1', title:'Outstanding &gt; 60 Hari', val:over60.length, desc:fmtRp(over60.reduce((s,r)=>s+r.nilai,0))+' berisiko', cls:'crit', data:over60, modalTitle:'Outstanding Invoice > 60 Hari'},
+    {id:'a2', title:'Mitra dengan SLA &lt; 50%', val:slaBelow50.length, desc:'dari '+Object.keys(mitraSla).length+' mitra tercatat (thd TOC)', cls:'crit', data:slaBelow50, modalTitle:'Mitra dengan SLA di Bawah 50% (thd TOC)', isSla:true},
+    {id:'a3', title:'Invoice Belum Diproses', val:belumProses.length, desc:'status: belum ada update', cls:'warn', data:belumProses, modalTitle:'Invoice Belum Diproses'},
+    {id:'a4', title:'Vendor Belum Submit', val:belumSubmit.length, desc:'berkas masih di mitra', cls:'warn', data:belumSubmit, modalTitle:'Invoice — Berkas Masih di Mitra (Belum Submit)'},
+  ];
+  const el = document.getElementById('alertRow');
+  el.innerHTML = defs.map(d=>`
+    <div class="alert-card ${d.cls}" onclick="openAlertModal('${d.id}')">
+      <div class="a-title">🔔 ${d.title}</div>
+      <div class="a-value">${fmtNum(d.val)}</div>
+      <div class="a-desc">${d.desc}</div>
+    </div>`).join('');
+  window._alertDefs = defs;
+}
+function openAlertModal(id){
+  const d = window._alertDefs.find(x=>x.id===id);
+  if(d.isSla){
+    let html = `<div class="modal-summary"><div class="msum"><div class="l">Mitra Terdampak</div><div class="v">${d.data.length}</div></div></div>
+      <table class="modal-table"><thead><tr><th>Nama Mitra</th><th>Jumlah Item</th><th>SLA Achievement</th></tr></thead><tbody>
+      ${d.data.map(x=>`<tr><td>${x.mitra}</td><td>${fmtNum(x.total)}</td><td><span class="badge ${x.pct<80?'crit':'warn'}">${fmtPct(x.pct)}</span></td></tr>`).join('')}
+      </tbody></table>`;
+    document.getElementById('modalTitle').textContent = d.modalTitle;
+    document.getElementById('modalSub').textContent = `${d.data.length} mitra memerlukan perhatian`;
+    document.getElementById('modalBody').innerHTML = html;
+    document.getElementById('modalOverlay').classList.add('show');
+    return;
+  }
+  openModalRows(d.data, d.modalTitle, `${d.data.length} item · ${fmtRp(d.data.reduce((s,r)=>s+r.nilai,0))}`);
+}
+
+/* ================= TOC WATCHLIST ================= */
+const TOC_SCOPE_STAGES = ['Draft','Submitted','Procurement']; // dipantau sampai BAST terbit, bukan sampai lunas dibayar
+function computeTocAgg(){
+  const rows = getFiltered({skipSb:true});
+  window._tocRawRows = rows;
+  const poRows = dedupeByPO(rows).filter(r=>TOC_SCOPE_STAGES.includes(r.sb));
+  poRows.sort((a,b)=> (a.d2toc??0) - (b.d2toc??0));
+  return poRows;
+}
+function renderTOC(){
+  const agg = computeTocAgg();
+  window._tocAgg = agg;
+  const totalPages = Math.max(1, Math.ceil(agg.length/tocPage.size));
+  if(tocPage.idx>=totalPages) tocPage.idx = 0;
+  const start = tocPage.idx*tocPage.size;
+  const pageItems = agg.slice(start, start+tocPage.size);
+  const body = document.getElementById('tocBody');
+  body.innerHTML = pageItems.map((g,i)=>{
+    const d = g.d2toc;
+    let badge;
+    if(d===null||d===undefined) badge = `<span class="badge warn">Tanpa TOC</span>`;
+    else if(d<0) badge = `<span class="badge crit">Terlambat ${Math.abs(d)} hari</span>`;
+    else if(d<=30) badge = `<span class="badge warn">Mendekati (${d} hari)</span>`;
+    else badge = `<span class="badge warn">${d} hari lagi</span>`;
+    let durasi = '-';
+    if(g.tglpo && g.toc){
+      const dur = Math.round((new Date(g.toc) - new Date(g.tglpo))/86400000);
+      durasi = dur+' hari';
+    }
+    return `<tr onclick="openTocDetail('${g.po}')">
+      <td>${start+i+1}</td><td>${g.po}</td><td><b>${g.mitra}</b></td><td>${g.b}</td>
+      <td>${fmtRp(g.nilai)}</td><td>${fmtDate(g.tglpo)}</td><td>${fmtDate(g.toc)}</td><td>${durasi}</td><td>${badge}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:24px;">Tidak ada PO yang belum BAST pada filter saat ini.</td></tr>`;
+
+  document.getElementById('tocPageInfo').textContent = `Menampilkan ${agg.length?start+1:0}–${Math.min(start+tocPage.size,agg.length)} dari ${agg.length} Nomor PO`;
+  document.getElementById('tocPrev').disabled = tocPage.idx<=0;
+  document.getElementById('tocNext').disabled = tocPage.idx>=totalPages-1;
+}
+function openTocDetail(po){
+  const items = (window._tocRawRows||[]).filter(r=>String(r.po)===String(po));
+  const g = (window._tocAgg||[]).find(x=>String(x.po)===String(po));
+  openModalRows(items, `Detail PO ${po} — ${g?g.mitra:''}`, `${items.length} baris item · ${fmtRp(g?g.nilai:0)} · TOC ${fmtDate(g?g.toc:null)}`);
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('tocPrev').onclick = ()=>{ if(tocPage.idx>0){tocPage.idx--; renderTOC();} };
+  document.getElementById('tocNext').onclick = ()=>{ tocPage.idx++; renderTOC(); };
+});
+
+/* ================= EXEC SUMMARY ================= */
+function renderExecSummary(){
+  const rows = getFiltered();
+  const k = computeKpiForRows(dedupeByPO(rows));
+  const agg = computeTocAgg();
+  const overduePo = agg.filter(g=>g.d2toc!==null && g.d2toc!==undefined && g.d2toc<0).length;
+  const areaAgg = BRANCHES.map(b=>{
+    const br = rows.filter(r=>r.b===b.code);
+    return {name:b.name, outstanding: br.filter(r=>r.pay==='UNPAID').reduce((s,r)=>s+r.nilai,0)};
+  }).sort((a,b)=>b.outstanding-a.outstanding);
+  const topArea = areaAgg[0];
+  const mitraSla = {};
+  rows.filter(r=>r.sla!==null && r.sla!==undefined).forEach(r=>{
+    mitraSla[r.mitra]=mitraSla[r.mitra]||{total:0,ok:0}; mitraSla[r.mitra].total++; if(r.sla)mitraSla[r.mitra].ok++;
+  });
+  const slaBelow50Count = Object.values(mitraSla).filter(v=>v.ok/v.total*100<50).length;
+  const worstPo = agg[0];
+  const outstandingPct = k.totalProc? (k.unpaidCount/k.totalProc*100):0;
+
+  const scope = [
+    state.y!=='all'?`Tahun ${state.y}`:null,
+    state.m!=='all'?MONTHS_ID[Number(state.m)-1]:null,
+    state.b!=='all'?BRANCH_NAME[state.b]:null,
+    state.mitra!=='all'?state.mitra:null,
+    state.jp!=='all'?state.jp:null,
+    state.sb!=='all'?state.sb:null,
+  ].filter(Boolean).join(' · ') || 'Seluruh Regional Sumbagteng, semua periode';
+
+  document.getElementById('execSummary').innerHTML = `
+    <h3>📋 Executive Summary</h3>
+    <div style="font-size:11.5px;color:#B9D3F5;margin-bottom:10px;">Ruang lingkup data: <b>${scope}</b></div>
+    <ul class="points">
+      <li>Total procurement tercatat <b>${fmtNum(k.totalProc)} Nomor PO</b> senilai <b>${fmtRpFull(k.totalNilai)}</b>, melibatkan <b>${k.vendorAktif} mitra kerja</b> aktif.</li>
+      <li>Outstanding invoice sebanyak <b>${fmtNum(k.unpaidCount)} PO (${outstandingPct.toFixed(1)}%)</b> senilai <b>${fmtRpFull(k.outstandingNilai)}</b> masih menunggu pembayaran.</li>
+      <li>PO yang sudah terbayar (Cash &amp; Bank) sebanyak <b>${fmtNum(k.paidCount)} PO</b> senilai <b>${fmtRpFull(k.paidNilai)}</b>.</li>
+      <li>SLA procurement regional (penyelesaian sesuai TOC/30 hari sejak PO) berada di <b>${fmtPct(k.slaPct)}</b>, dengan <b>${slaBelow50Count} mitra</b> berada di bawah 50%. Perlu dicatat: TOC 30 hari berlaku sama untuk semua jenis pekerjaan, sehingga pekerjaan konstruksi yang secara alami butuh waktu lebih lama akan tampak rendah dibanding pekerjaan provisioning/operasional.</li>
+      <li>Branch dengan outstanding tertinggi: <b>${topArea?topArea.name:'-'}</b> senilai <b>${fmtRpFull(topArea?topArea.outstanding:0)}</b> — perlu prioritas penagihan/verifikasi.</li>
+      <li><b>${agg.length} Nomor PO</b> masih belum BAST dan telah melewati/mendekati TOC, dengan <b>${overduePo} PO</b> sudah melewati TOC. PO dengan status paling kritis: <b>${worstPo?worstPo.po+' ('+worstPo.mitra+')':'-'}</b>${worstPo&&worstPo.d2toc<0?` (terlambat ${Math.abs(worstPo.d2toc)} hari)`:''}.</li>
+    </ul>
+    <div class="foot">Executive Dashboard Procurement — IAM Regional Sumbagteng · Data per ${TODAY_LABEL} · Disusun otomatis dari data live Google Sheets (snapshot terakhir saat dashboard dibuat)</div>
+  `;
+}
+
+/* ================= MODAL ================= */
+function openModalRows(rows, title, sub){
+  rows = [...rows].sort((a,b)=> (b.tglpo||'').localeCompare(a.tglpo||''));
+  const showRows = rows.slice(0,300);
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalSub').textContent = sub||'';
+  const totalNilai = rows.reduce((s,r)=>s+r.nilai,0);
+  let html = `<div class="modal-summary">
+    <div class="msum"><div class="l">Jumlah Item</div><div class="v">${fmtNum(rows.length)}</div></div>
+    <div class="msum"><div class="l">Total Nilai</div><div class="v">${fmtRp(totalNilai)}</div></div>
+  </div>`;
+  html += `<table class="modal-table"><thead><tr>
+    <th>Nomor PO</th><th>Branch</th><th>Mitra</th><th>Jenis</th><th>Deskripsi Pekerjaan</th><th>Status Procurement</th><th>Status Bayar</th><th>Nilai</th><th>Tgl PO</th><th>TOC</th>
+  </tr></thead><tbody>`;
+  html += showRows.map(r=>`<tr>
+    <td>${r.po}</td><td>${r.b}</td><td>${r.mitra}</td><td>${r.jp}</td>
+    <td style="max-width:220px;">${r.desc}</td><td>${r.sp}</td>
+    <td>${r.pay==='PAID'?'<span class=\"badge\" style=\"background:#E7F6EE;color:#1E8E5A;\">PAID</span>':'<span class=\"badge\" style=\"background:#FDECEC;color:#C62828;\">UNPAID</span>'}</td>
+    <td>${fmtRp(r.nilai)}</td><td>${fmtDate(r.tglpo)}</td><td>${fmtDate(r.toc)}</td>
+  </tr>`).join('');
+  html += `</tbody></table>`;
+  if(rows.length>300) html += `<div class="chart-note" style="margin-top:8px;">Menampilkan 300 dari ${rows.length} item (diurutkan berdasarkan tanggal PO terbaru).</div>`;
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function openModalVendorAgg(rows, title){
+  const mitraSet = [...new Set(rows.map(r=>r.mitra))];
+  const agg = mitraSet.map(m=>{
+    const mr = rows.filter(r=>r.mitra===m);
+    return {mitra:m, count:mr.length, nilai:mr.reduce((s,r)=>s+r.nilai,0), outstanding:mr.filter(r=>r.pay==='UNPAID').reduce((s,r)=>s+r.nilai,0)};
+  }).sort((a,b)=>b.nilai-a.nilai);
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalSub').textContent = `${agg.length} mitra`;
+  let html = `<table class="modal-table"><thead><tr><th>Nama Mitra</th><th>Jumlah Item</th><th>Total Nilai</th><th>Outstanding</th></tr></thead><tbody>`;
+  html += agg.map(a=>`<tr><td>${a.mitra}</td><td>${fmtNum(a.count)}</td><td>${fmtRp(a.nilai)}</td><td>${fmtRp(a.outstanding)}</td></tr>`).join('');
+  html += `</tbody></table>`;
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('modalClose').onclick = ()=> document.getElementById('modalOverlay').classList.remove('show');
+  document.getElementById('modalOverlay').onclick = (e)=>{ if(e.target.id==='modalOverlay') e.currentTarget.classList.remove('show'); };
+});
+
+/* ================= TOGGLES ================= */
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('areaToggle').addEventListener('click', e=>{
+    if(e.target.tagName!=='BUTTON') return;
+    [...e.currentTarget.children].forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active'); view.area = e.target.dataset.v; renderArea();
+  });
+  document.getElementById('jenisMetricToggle').addEventListener('click', e=>{
+    if(e.target.tagName!=='BUTTON') return;
+    [...e.currentTarget.children].forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active'); view.jenisMetric = e.target.dataset.v; renderArea();
+  });
+  document.getElementById('jenisPeriodToggle').addEventListener('click', e=>{
+    if(e.target.tagName!=='BUTTON') return;
+    [...e.currentTarget.children].forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active'); view.jenisPeriod = e.target.dataset.v; renderArea();
+  });
+  document.getElementById('top10Toggle').addEventListener('click', e=>{
+    if(e.target.tagName!=='BUTTON') return;
+    [...e.currentTarget.children].forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active'); view.top10 = e.target.dataset.v; renderTop10();
+  });
+  document.getElementById('realisasiToggle').addEventListener('click', e=>{
+    if(e.target.tagName!=='BUTTON') return;
+    [...e.currentTarget.children].forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active'); view.realisasi = e.target.dataset.v; renderRealisasi();
+  });
+});
+
+/* ================= SEARCH ================= */
+function debounce(fn, wait){
+  let t;
+  return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); };
+}
+function renderSearch(){
+  const termEl = document.getElementById('searchBox');
+  const onlyEl = document.getElementById('searchOutstandingOnly');
+  if(!termEl || !onlyEl) return;
+  const term = termEl.value.trim().toUpperCase();
+  const onlyOutstanding = onlyEl.checked;
+  let rows = getFiltered();
+  if(onlyOutstanding) rows = rows.filter(r=>r.pay==='UNPAID');
+  if(term){
+    rows = rows.filter(r=>{
+      const bname = (BRANCH_NAME[r.b]||'').toUpperCase();
+      return String(r.po).toUpperCase().includes(term)
+        || String(r.mitra).toUpperCase().includes(term)
+        || String(r.b).toUpperCase().includes(term)
+        || bname.includes(term);
+    });
+  }
+  const active = term || onlyOutstanding;
+  document.getElementById('searchResultInfo').textContent = active
+    ? `${fmtNum(rows.length)} hasil ditemukan${rows.length>200?' (menampilkan 200 pertama)':''} — total nilai ${fmtRp(rows.reduce((s,r)=>s+r.nilai,0))}`
+    : 'Ketik kata kunci untuk mencari, atau centang "Hanya Outstanding" untuk melihat seluruh invoice yang belum dibayar (mengikuti filter di atas).';
+
+  window._searchRows = rows.slice(0,200);
+  const body = document.getElementById('searchBody');
+  if(!active){ body.innerHTML=''; return; }
+  body.innerHTML = window._searchRows.map((r,i)=>`<tr onclick="openModalRows([window._searchRows[${i}]], 'Detail PO ${r.po}', '${r.mitra.replace(/'/g,"\\'")}')">
+      <td>${r.po}</td><td>${r.b}</td><td>${r.mitra}</td><td>${r.jp}</td><td style="max-width:240px;">${r.desc}</td><td>${r.sp}</td>
+      <td>${r.pay==='PAID'?'<span class="badge" style="background:#E7F6EE;color:#1E8E5A;">PAID</span>':'<span class="badge" style="background:#FDECEC;color:#C62828;">UNPAID</span>'}</td>
+      <td>${fmtRp(r.nilai)}</td><td>${fmtDate(r.tglpo)}</td><td>${fmtDate(r.toc)}</td>
+    </tr>`).join('') || `<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px;">Tidak ada data yang cocok dengan pencarian.</td></tr>`;
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  const sb = document.getElementById('searchBox');
+  const so = document.getElementById('searchOutstandingOnly');
+  if(sb) sb.addEventListener('input', debounce(renderSearch, 200));
+  if(so) so.addEventListener('change', renderSearch);
+});
+
+/* ================= MAIN ================= */
+function renderAll(){
+  renderKPI(); renderTrend(); renderArea(); renderTop10();
+  renderStatus(); renderRealisasi(); renderAging(); renderAlerts();
+  tocPage.idx = 0; renderTOC(); renderExecSummary(); renderSearch();
+}
+let RAW = [];
+
+function setLoadingState(msg){
+  document.getElementById('kpiRow').innerHTML = `<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--text2);font-size:13px;">${msg}</div>`;
+}
+function setErrorState(msg){
+  document.getElementById('kpiRow').innerHTML = `<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--red);font-size:13px;">⚠️ Gagal memuat data: ${msg}<br><br><button class="btn-reset" style="background:var(--red);color:#fff;" onclick="location.reload()">Coba Lagi</button></div>`;
+}
+function updateDataAsOf(){
+  const now = new Date();
+  const opts = {day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'};
+  document.getElementById('dataAsOf').textContent = 'Data live per ' + now.toLocaleString('id-ID', opts);
+}
+
+function loadData(forceRefresh, onDone){
+  if(!forceRefresh) setLoadingState('⏳ Memuat data live dari Google Sheets, mohon tunggu sebentar...');
+  google.script.run
+    .withSuccessHandler(function(data){
+      RAW = data || [];
+      updateDataAsOf();
+      buildFilterBar();
+      renderAll();
+      if(onDone) onDone();
+    })
+    .withFailureHandler(function(err){
+      setErrorState(err && err.message ? err.message : String(err));
+      if(onDone) onDone();
+    })
+    .PROC_getDashboardData(!!forceRefresh);
+}
+function manualRefresh(){
+  const btn = document.getElementById('refreshBtn');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Memuat...'; }
+  loadData(true, ()=>{ if(btn){ btn.disabled = false; btn.textContent = '🔄 Refresh Data'; } });
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  loadData();
+});
+
+</script>
+</body>
+</html>

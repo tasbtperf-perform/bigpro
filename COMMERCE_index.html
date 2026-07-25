@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root{
+      --navy:#0b1f3a;
+      --navy-2:#122b52;
+      --blue:#2563eb;
+      --blue-light:#eaf1ff;
+      --bg:#f3f5f9;
+      --card:#ffffff;
+      --border:#e6e9f0;
+      --text:#0f172a;
+      --muted:#64748b;
+      --green:#16a34a;
+      --amber:#d97706;
+      --red:#dc2626;
+      --radius:14px;
+      --shadow:0 1px 2px rgba(15,23,42,.04), 0 6px 20px rgba(15,23,42,.06);
+    }
+    *{box-sizing:border-box;}
+    html,body{margin:0;padding:0;}
+    body{
+      font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+    }
+    a{color:inherit;}
+
+    /* ---------- HEADER ---------- */
+    .topbar{
+      background:linear-gradient(120deg,var(--navy) 0%,var(--navy-2) 60%,#1d3f7a 100%);
+      color:#fff;
+      padding:22px 28px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:14px;
+    }
+    .topbar h1{
+      margin:0;
+      font-size:20px;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .topbar .subtitle{
+      margin-top:4px;
+      font-size:13px;
+      color:#cfe0ff;
+      font-weight:500;
+    }
+    .topbar-right{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      font-size:12.5px;
+      color:#dce8ff;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      background:#fff;
+      color:var(--navy);
+      border:none;
+      border-radius:10px;
+      padding:9px 16px;
+      font-weight:700;
+      font-size:13px;
+      cursor:pointer;
+      box-shadow:var(--shadow);
+      transition:transform .12s ease, box-shadow .12s ease;
+    }
+    .btn:hover{transform:translateY(-1px);}
+    .btn:active{transform:translateY(0);}
+    .btn.ghost{
+      background:rgba(255,255,255,.12);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.35);
+    }
+    .btn.outline{
+      background:var(--blue-light); color:var(--blue); box-shadow:none;
+      border:1px solid #cfe0ff; padding:8px 14px; font-size:12.5px;
+    }
+    .spin{
+      display:inline-block;width:12px;height:12px;border-radius:50%;
+      border:2px solid rgba(11,31,58,.25); border-top-color:var(--navy);
+      animation:sp .7s linear infinite;
+    }
+    .spin.white{border-color:rgba(255,255,255,.35); border-top-color:#fff;}
+    @keyframes sp{to{transform:rotate(360deg);}}
+
+    /* ---------- LAYOUT ---------- */
+    .wrap{max-width:1360px;margin:0 auto;padding:22px 24px 60px;}
+
+    .kpi-grid{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:14px;
+      margin-bottom:20px;
+    }
+    @media (max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+    @media (max-width:560px){.kpi-grid{grid-template-columns:1fr;}}
+
+    .kpi{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:16px 18px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .kpi .bar{position:absolute;left:0;top:0;bottom:0;width:4px;}
+    .kpi .label{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+    .kpi .value{font-size:22px;font-weight:800;margin-top:6px;letter-spacing:-.2px;}
+    .kpi .sub{font-size:12px;color:var(--muted);margin-top:4px;font-weight:500;}
+    .kpi .sub b{color:var(--text);}
+
+    .panel{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px 20px;
+      margin-bottom:18px;
+    }
+    .panel-head{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:12px;flex-wrap:wrap;gap:8px;
+    }
+    .panel-head h2{font-size:15px;margin:0;font-weight:700;}
+    .panel-head .hint{font-size:12px;color:var(--muted);}
+
+    .charts-grid{
+      display:grid;
+      grid-template-columns:1.3fr 1fr;
+      gap:18px;
+      margin-bottom:18px;
+    }
+    @media (max-width:980px){.charts-grid{grid-template-columns:1fr;}}
+    .charts-grid-2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+    }
+    @media (max-width:980px){.charts-grid-2{grid-template-columns:1fr;}}
+
+    .chart-box{position:relative;}
+    .chart-box canvas{max-width:100%;}
+    .chart-tall{height:340px;}
+    .chart-mid{height:280px;}
+
+    /* ---------- FILTERS ---------- */
+    .filters{
+      display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
+    }
+    .field{display:flex;flex-direction:column;gap:5px;position:relative;}
+    .field label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+    .field input{
+      border:1px solid var(--border);
+      background:#fbfcfe;
+      border-radius:9px;
+      padding:8px 10px;
+      font-size:13px;
+      font-family:inherit;
+      color:var(--text);
+      min-width:150px;
+    }
+    .field input[type="text"]{min-width:220px;}
+    .field input:focus{outline:2px solid var(--blue);outline-offset:1px;}
+    .reset-link{
+      font-size:12.5px;font-weight:700;color:var(--blue);cursor:pointer;
+      background:none;border:none;padding:9px 4px;
+    }
+    .filter-count{
+      margin-left:auto;
+      font-size:12.5px;color:var(--muted);font-weight:600;align-self:center;
+    }
+
+    /* ---------- MULTI-SELECT ---------- */
+    .msfield{position:relative;}
+    .ms-btn{
+      border:1px solid var(--border); background:#fbfcfe; border-radius:9px;
+      padding:8px 10px; font-size:13px; font-family:inherit; color:var(--text);
+      min-width:180px; text-align:left; cursor:pointer;
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+    }
+    .ms-btn:hover{border-color:var(--blue);}
+    .ms-btn .chev{color:var(--muted); font-size:10px;}
+    .ms-btn.active-filter{border-color:var(--blue); background:var(--blue-light); color:var(--blue); font-weight:700;}
+    .ms-panel{
+      position:absolute; top:calc(100% + 6px); left:0; z-index:40;
+      background:#fff; border:1px solid var(--border); border-radius:10px;
+      box-shadow:0 10px 30px rgba(15,23,42,.16);
+      min-width:240px; max-height:280px; overflow-y:auto; padding:8px;
+      display:none;
+    }
+    .ms-panel.open{display:block;}
+    .ms-actions{
+      display:flex; justify-content:space-between; padding:2px 4px 8px;
+      border-bottom:1px solid var(--border); margin-bottom:6px;
+    }
+    .ms-actions button{background:none;border:none;color:var(--blue);font-size:11.5px;font-weight:700;cursor:pointer;padding:2px 4px;}
+    .ms-option{
+      display:flex; align-items:center; gap:8px; padding:6px 6px; border-radius:6px;
+      font-size:13px; cursor:pointer;
+    }
+    .ms-option:hover{background:#f1f5f9;}
+    .ms-option input{margin:0;flex:none;}
+    .ms-option span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .ms-empty{padding:10px 6px;color:var(--muted);font-size:12.5px;}
+
+    /* ---------- MATRIX TABLE ---------- */
+    .matrix-scroll{overflow:auto; max-height:640px; border:1px solid var(--border); border-radius:10px;}
+    table.matrix{border-collapse:separate; border-spacing:0; font-size:12.5px; width:100%;}
+    table.matrix thead th{
+      position:sticky; top:0; z-index:3; background:#f8fafc;
+      text-align:right; border-bottom:2px solid var(--border);
+      padding:10px 12px; font-size:10.5px; text-transform:uppercase;
+      letter-spacing:.2px; color:var(--muted); white-space:nowrap;
+    }
+    table.matrix thead th.total-col{color:var(--navy); background:#eaf1ff;}
+    table.matrix tbody td{
+      padding:8px 12px; border-bottom:1px solid var(--border);
+      text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums;
+    }
+    table.matrix td.zero{color:#cbd5e1;}
+    table.matrix td.total-col, table.matrix th.total-col{font-weight:800; background:#f4f7fc;}
+    table.matrix td.wrap-cell{white-space:normal; max-width:280px; text-align:left;}
+
+    table.matrix th:nth-child(1), table.matrix td:nth-child(1){
+      position:sticky; left:0; z-index:2; width:120px; min-width:120px; max-width:150px;
+      text-align:left; background:#fff; overflow:hidden; text-overflow:ellipsis;
+    }
+    table.matrix th:nth-child(2), table.matrix td:nth-child(2){
+      position:sticky; left:120px; z-index:2; width:210px; min-width:210px; max-width:240px;
+      text-align:left; background:#fff; overflow:hidden; text-overflow:ellipsis;
+    }
+    table.matrix thead th:nth-child(1), table.matrix thead th:nth-child(2){ z-index:5; background:#f8fafc; text-align:left; }
+
+    table.matrix td.witel-cell{
+      font-weight:800; color:var(--navy); vertical-align:middle;
+      background:#f6f8fc; border-right:1px solid var(--border);
+      border-top:2px solid #dfe6f2;
+    }
+    table.matrix tr.row-program td:nth-child(2){font-weight:500;}
+    table.matrix tr.row-program:hover td{background:#f8fafc;}
+
+    table.matrix tr.row-total td{font-weight:800; border-top:1.5px solid var(--border); background:#f8fafc;}
+    table.matrix tr.row-total td:nth-child(1),
+    table.matrix tr.row-total td:nth-child(2){background:#f8fafc;}
+
+    table.matrix tr.row-grand td{font-weight:800; color:#fff; background:var(--navy); border-top:2px solid var(--navy);}
+    table.matrix tr.row-grand td:nth-child(1),
+    table.matrix tr.row-grand td:nth-child(2){background:var(--navy); color:#fff;}
+    table.matrix tr.row-grand td.total-col{background:#0a1830;}
+
+    /* Modifier untuk tabel dengan HANYA 1 kolom sticky (mis. matriks KPI MTEL
+       yang pakai rowspan di header, sehingga aturan sticky berbasis nth-child
+       tidak bisa dipakai apa adanya). */
+    table.matrix.single-sticky th:nth-child(1), table.matrix.single-sticky td:nth-child(1),
+    table.matrix.single-sticky th:nth-child(2), table.matrix.single-sticky td:nth-child(2){
+      position:static; width:auto; min-width:0; max-width:none; text-align:center;
+    }
+    table.matrix.single-sticky .sticky-col1{
+      position:sticky !important; left:0 !important; z-index:2 !important;
+      width:160px !important; min-width:160px !important; max-width:180px !important;
+      text-align:left !important; background:#fff !important;
+    }
+    table.matrix.single-sticky thead .sticky-col1{ z-index:5 !important; background:#f8fafc !important; }
+    table.matrix.single-sticky thead tr:nth-child(2) th{ position:static !important; top:auto !important; }
+    table.matrix.single-sticky thead tr:nth-child(1) th{ font-size:11.5px; }
+    table.matrix.single-sticky thead tr:nth-child(2) th{ font-size:10px; background:#fbfcfe; border-bottom:1px solid var(--border); }
+
+    /* Dipakai hanya pada klon tabel saat proses capture gambar, supaya hasil
+       PNG lebih besar & jelas (bukan cuma tajam tapi juga teks lebih lega). */
+    .capture-mode table.matrix{font-size:16px;}
+    .capture-mode table.matrix thead th{font-size:13px; padding:14px 18px;}
+    .capture-mode table.matrix tbody td{padding:12px 18px;}
+    .capture-mode table.matrix td.witel-cell{font-size:16.5px;}
+    .capture-mode table.matrix tr.row-total td,
+    .capture-mode table.matrix tr.row-grand td{font-size:16px;}
+
+    /* "Pill" lembut untuk badge status Document Control & Mitratel: latar tint
+       tipis warna status + teks tebal warna solid + garis tepi tipis senada.
+       Jauh lebih enak dilihat daripada latar blok solid + teks putih polos. */
+    .pill{
+      display:inline-block;
+      padding:4px 11px;
+      border-radius:999px;
+      font-size:11.5px;
+      font-weight:700;
+      white-space:nowrap;
+      border:1px solid transparent;
+      letter-spacing:.1px;
+    }
+    .capture-mode .pill{font-size:14px; padding:5px 13px;}
+
+    .empty-state{
+      text-align:center;padding:40px 10px;color:var(--muted);font-size:13px;
+    }
+
+    .footer{
+      text-align:center;color:var(--muted);font-size:12px;padding:20px 0 0;
+    }
+    .footer a{color:var(--blue);text-decoration:none;font-weight:600;}
+
+    #loadingOverlay{
+      position:fixed;inset:0;background:rgba(243,245,249,.9);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+      z-index:50;
+    }
+    #loadingOverlay .big-spin{
+      width:36px;height:36px;border-radius:50%;
+      border:4px solid #dbe4f3;border-top-color:var(--blue);
+      animation:sp .8s linear infinite;
+    }
+    #loadingOverlay p{color:var(--muted);font-weight:600;font-size:13px;}
+    #errorBox{
+      display:none;
+      background:#fef2f2;border:1px solid #fecaca;color:#991b1b;
+      padding:14px 16px;border-radius:12px;margin-bottom:18px;font-size:13px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loadingOverlay">
+    <div class="big-spin"></div>
+    <p>Memuat data dari sheet POTENSI SBT&hellip;</p>
+  </div>
+
+  <div class="topbar">
+    <div>
+      <h1>Dashboard Monitoring Tagihan</h1>
+      <div class="subtitle">Rekap Potensi SBT &mdash; Monitoring Rekon Provisioning &amp; Assurance Sumbagteng</div>
+    </div>
+    <div class="topbar-right">
+      <span id="lastUpdated">&nbsp;</span>
+      <button class="btn ghost" id="refreshBtn" onclick="loadData()">&#8635; Refresh Data</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <div id="errorBox"></div>
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <!-- STATUS FUNNEL -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Posisi Tagihan berdasarkan Status Lapangan / Berkas</h2>
+        <span class="hint">Nilai Potensi (Rp) per tahapan proses berkas</span>
+      </div>
+      <div class="chart-box chart-tall"><canvas id="statusChart"></canvas></div>
+    </div>
+
+    <!-- WITEL + PORTFOLIO -->
+    <div class="charts-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Nilai Potensi per WITEL / District</h2>
+          <span class="hint">Diurutkan dari nilai terbesar</span>
+        </div>
+        <div class="chart-box chart-mid"><canvas id="witelChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Komposisi per Portofolio</h2>
+        </div>
+        <div class="chart-box chart-mid"><canvas id="portoChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- TREND -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Tren Nilai Potensi per Bulan</h2>
+        <span class="hint">Berdasarkan kolom BULAN</span>
+      </div>
+      <div class="chart-box chart-mid"><canvas id="trendChart"></canvas></div>
+    </div>
+
+    <!-- FILTERS + MATRIX -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Matriks Posisi Tagihan &mdash; Cabang &times; Status Berkas</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn outline" id="captureBtn" onclick="captureElement('matrixScrollWrap','captureBtn','Matriks Posisi Tagihan — Cabang x Status Lapangan/Berkas','matriks-tagihan-potensi-sbt')">&#128247; Capture Gambar</button>
+          <button class="btn outline" onclick="exportCsv()">&#8681; Unduh Detail (CSV)</button>
+        </div>
+      </div>
+
+      <div class="filters" style="margin-bottom:16px;">
+        <div class="field">
+          <label>Cari</label>
+          <input type="text" id="fSearch" placeholder="Nama LOP / Program / WITEL...">
+        </div>
+        <div class="field msfield">
+          <label>Status Lapangan/Berkas</label>
+          <button type="button" class="ms-btn" id="ms_status_btn" onclick="toggleMs('status')">Semua Status <span class="chev">&#9662;</span></button>
+          <div class="ms-panel" id="ms_status_panel"></div>
+        </div>
+        <div class="field msfield">
+          <label>WITEL / District</label>
+          <button type="button" class="ms-btn" id="ms_witel_btn" onclick="toggleMs('witel')">Semua WITEL <span class="chev">&#9662;</span></button>
+          <div class="ms-panel" id="ms_witel_panel"></div>
+        </div>
+        <div class="field msfield">
+          <label>Nama Program</label>
+          <button type="button" class="ms-btn" id="ms_program_btn" onclick="toggleMs('program')">Semua Program <span class="chev">&#9662;</span></button>
+          <div class="ms-panel" id="ms_program_panel"></div>
+        </div>
+        <div class="field msfield">
+          <label>Bulan</label>
+          <button type="button" class="ms-btn" id="ms_bulan_btn" onclick="toggleMs('bulan')">Semua Bulan <span class="chev">&#9662;</span></button>
+          <div class="ms-panel" id="ms_bulan_panel"></div>
+        </div>
+        <div class="field msfield">
+          <label>Portofolio</label>
+          <button type="button" class="ms-btn" id="ms_porto_btn" onclick="toggleMs('porto')">Semua Portofolio <span class="chev">&#9662;</span></button>
+          <div class="ms-panel" id="ms_porto_panel"></div>
+        </div>
+        <button class="reset-link" onclick="resetFilters()">Reset filter</button>
+        <span class="filter-count" id="filterCount"></span>
+      </div>
+
+      <div class="matrix-scroll" id="matrixScrollWrap">
+        <table class="matrix">
+          <thead id="matrixHead"></thead>
+          <tbody id="matrixBody"></tbody>
+        </table>
+      </div>
+      <div id="matrixEmpty" class="empty-state" style="display:none;">Tidak ada data yang cocok dengan filter.</div>
+    </div>
+
+    <!-- DOCUMENT CONTROL TELKOM GROUP -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Dokumen Control Telkom Group</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn outline" id="docCaptureBtn" onclick="captureElement('docMatrixScroll','docCaptureBtn','Dokumen Control Telkom Group — Posisi Berkas per Branch &amp; Pekerjaan','dokumen-control-telkom-group')">&#128247; Capture Gambar</button>
+          <button class="btn outline" onclick="exportDocCsv()">&#8681; Unduh Detail (CSV)</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-bottom:16px;">Posisi berkas per Branch &amp; Pekerjaan &mdash; sheet <b>Document Control</b>. Setiap kolom mewakili status berkas pada bulan tersebut.</div>
+
+      <div class="kpi-grid" id="docKpiGrid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px;"></div>
+
+      <div class="filters" style="margin-bottom:16px;">
+        <div class="field">
+          <label>Cari</label>
+          <input type="text" id="docSearch" placeholder="Branch / Pekerjaan...">
+        </div>
+        <div class="field msfield">
+          <label>Branch</label>
+          <button type="button" class="ms-btn" id="ms_docbranch_btn" onclick="toggleMs('docbranch')">Semua Branch <span class="chev">&#9662;</span></button>
+          <div class="ms-panel" id="ms_docbranch_panel"></div>
+        </div>
+        <div class="field msfield">
+          <label>Pekerjaan</label>
+          <button type="button" class="ms-btn" id="ms_docpekerjaan_btn" onclick="toggleMs('docpekerjaan')">Semua Pekerjaan <span class="chev">&#9662;</span></button>
+          <div class="ms-panel" id="ms_docpekerjaan_panel"></div>
+        </div>
+        <button class="reset-link" onclick="resetDocFilters()">Reset filter</button>
+        <span class="filter-count" id="docFilterCount"></span>
+      </div>
+
+      <div id="docLoading" style="padding:36px 10px;text-align:center;color:var(--muted);font-size:13px;">
+        <span class="spin"></span>&nbsp; Memuat data Document Control&hellip;
+      </div>
+      <div id="docErrorBox" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px 16px;border-radius:12px;margin-bottom:12px;font-size:13px;"></div>
+      <div class="matrix-scroll" id="docMatrixScroll" style="display:none;">
+        <table class="matrix">
+          <thead id="docMatrixHead"></thead>
+          <tbody id="docMatrixBody"></tbody>
+        </table>
+      </div>
+      <div id="docEmpty" class="empty-state" style="display:none;">Tidak ada data yang cocok dengan filter.</div>
+    </div>
+
+    <!-- POSISI BERKAS MITRATEL -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Posisi Berkas Mitratel</h2>
+      </div>
+      <div class="hint" style="margin-bottom:16px;">Capaian KPI &amp; progres rekonsiliasi pekerjaan Mitratel &mdash; sheet <b>MS MTEL 2</b> &amp; <b>PROGRESS MTEL 2</b>.</div>
+
+      <div class="panel-head" style="margin-bottom:10px;">
+        <h2 style="font-size:13px;">Capaian KPI per Regional MTEL</h2>
+        <button class="btn outline" id="mtelKpiCaptureBtn" onclick="captureElement('mtelKpiScroll','mtelKpiCaptureBtn','Capaian KPI Mitratel per Regional','kpi-mitratel-regional')">&#128247; Capture Gambar</button>
+      </div>
+      <div id="mtelKpiLoading" style="padding:24px 10px;text-align:center;color:var(--muted);font-size:13px;">
+        <span class="spin"></span>&nbsp; Memuat data KPI MTEL&hellip;
+      </div>
+      <div id="mtelKpiErrorBox" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px 16px;border-radius:12px;margin-bottom:12px;font-size:13px;"></div>
+      <div class="matrix-scroll" id="mtelKpiScroll" style="display:none;max-height:320px;margin-bottom:26px;">
+        <table class="matrix single-sticky">
+          <thead id="mtelKpiHead"></thead>
+          <tbody id="mtelKpiBody"></tbody>
+        </table>
+      </div>
+
+      <div class="panel-head" style="margin:22px 0 10px;padding-top:18px;border-top:1px solid var(--border);">
+        <h2 style="font-size:13px;">Detail Progress Pekerjaan Mitratel</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn outline" id="mtelCaptureBtn" onclick="captureElement('mtelProgressScroll','mtelCaptureBtn','Detail Progress Pekerjaan Mitratel','progress-pekerjaan-mitratel')">&#128247; Capture Gambar</button>
+          <button class="btn outline" onclick="exportMtelCsv()">&#8681; Unduh Detail (CSV)</button>
+        </div>
+      </div>
+
+      <div class="filters" style="margin-bottom:16px;">
+        <div class="field">
+          <label>Cari</label>
+          <input type="text" id="mtelSearch" placeholder="WBS / PIC / Keterangan...">
+        </div>
+        <div class="field msfield">
+          <label>WBS</label>
+          <button type="button" class="ms-btn" id="ms_mtelwbs_btn" onclick="toggleMs('mtelwbs')">Semua WBS <span class="chev">&#9662;</span></button>
+          <div class="ms-panel" id="ms_mtelwbs_panel"></div>
+        </div>
+        <div class="field msfield">
+          <label>Regional</label>
+          <button type="button" class="ms-btn" id="ms_mtelregional_btn" onclick="toggleMs('mtelregional')">Semua Regional <span class="chev">&#9662;</span></button>
+          <div class="ms-panel" id="ms_mtelregional_panel"></div>
+        </div>
+        <div class="field msfield">
+          <label>Bulan</label>
+          <button type="button" class="ms-btn" id="ms_mtelbulan_btn" onclick="toggleMs('mtelbulan')">Semua Bulan <span class="chev">&#9662;</span></button>
+          <div class="ms-panel" id="ms_mtelbulan_panel"></div>
+        </div>
+        <button class="reset-link" onclick="resetMtelFilters()">Reset filter</button>
+        <span class="filter-count" id="mtelFilterCount"></span>
+      </div>
+
+      <div id="mtelProgressLoading" style="padding:24px 10px;text-align:center;color:var(--muted);font-size:13px;">
+        <span class="spin"></span>&nbsp; Memuat data Progress MTEL&hellip;
+      </div>
+      <div id="mtelProgressErrorBox" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px 16px;border-radius:12px;margin-bottom:12px;font-size:13px;"></div>
+      <div class="matrix-scroll" id="mtelProgressScroll" style="display:none;">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th>WBS</th><th>Regional</th><th style="text-align:left;">Bulan</th>
+              <th style="text-align:center;">REKON</th><th style="text-align:center;">SIRKULIR</th>
+              <th style="text-align:center;">BA REKON</th><th style="text-align:center;">BAST</th><th style="text-align:center;">MSD</th>
+              <th class="total-col">Realisasi</th><th>Keterangan</th><th>PIC</th>
+            </tr>
+          </thead>
+          <tbody id="mtelProgressBody"></tbody>
+        </table>
+      </div>
+      <div id="mtelProgressEmpty" class="empty-state" style="display:none;">Tidak ada data yang cocok dengan filter.</div>
+    </div>
+
+    <div class="footer">
+      Sumber data: <a id="sourceLink" href="#" target="_blank">Spreadsheet POTENSI SBT</a> &nbsp;&middot;&nbsp;
+      Dashboard ini membaca data langsung dari sheet setiap kali dimuat / direfresh.
+    </div>
+  </div>
+
+<script>
+  // ============================================================================
+  // STATE
+  // ============================================================================
+  var RAW = null;            // hasil dari COMMERCE_getDashboardData()
+  var FILTERED = [];
+  var charts = {};
+
+  var DOC_RAW = null;        // hasil dari COMMERCE_getDocumentControlData()
+  var DOC_FILTERED = [];
+
+  var MTEL_RAW = null;       // hasil dari COMMERCE_getMitratelData()
+  var MTEL_PROGRESS_FILTERED = [];
+
+  var BULAN_ORDER = ['JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI','JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER'];
+
+  // Multi-select filter state: tiap key punya {selected: {value:true}, options: [...], onChange: fn}
+  var MS = {
+    status:       { selected: {}, options: [], onChange: null },
+    witel:        { selected: {}, options: [], onChange: null },
+    program:      { selected: {}, options: [], onChange: null },
+    bulan:        { selected: {}, options: [], onChange: null },
+    porto:        { selected: {}, options: [], onChange: null },
+    docbranch:    { selected: {}, options: [], onChange: null },
+    docpekerjaan: { selected: {}, options: [], onChange: null },
+    mtelwbs:      { selected: {}, options: [], onChange: null },
+    mtelregional: { selected: {}, options: [], onChange: null },
+    mtelbulan:    { selected: {}, options: [], onChange: null }
+  };
+  var MS_LABEL = {
+    status: 'Status', witel: 'WITEL', program: 'Program', bulan: 'Bulan', porto: 'Portofolio',
+    docbranch: 'Branch', docpekerjaan: 'Pekerjaan',
+    mtelwbs: 'WBS', mtelregional: 'Regional', mtelbulan: 'Bulan'
+  };
+  var MS_ALL_LABEL = {
+    status: 'Semua Status', witel: 'Semua WITEL', program: 'Semua Program', bulan: 'Semua Bulan', porto: 'Semua Portofolio',
+    docbranch: 'Semua Branch', docpekerjaan: 'Semua Pekerjaan',
+    mtelwbs: 'Semua WBS', mtelregional: 'Semua Regional', mtelbulan: 'Semua Bulan'
+  };
+  var MTEL_REGION_ORDER = ['Sumbagut', 'Sumbagteng', 'Sumbagsel'];
+
+  // ============================================================================
+  // INIT
+  // ============================================================================
+  document.addEventListener('DOMContentLoaded', function () {
+    loadData();
+    loadDocControl();
+    loadMitratel();
+    document.getElementById('fSearch').addEventListener('input', debounce(onFilterChange, 200));
+    document.getElementById('docSearch').addEventListener('input', debounce(onDocFilterChange, 200));
+    document.getElementById('mtelSearch').addEventListener('input', debounce(onMtelFilterChange, 200));
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest || !e.target.closest('.msfield')) {
+      document.querySelectorAll('.ms-panel').forEach(function (p) { p.classList.remove('open'); });
+    }
+  });
+
+  function debounce(fn, ms) {
+    var t;
+    return function () { clearTimeout(t); var a = arguments; t = setTimeout(function () { fn.apply(null, a); }, ms); };
+  }
+
+  function loadData() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('errorBox').style.display = 'none';
+    var btn = document.getElementById('refreshBtn');
+    btn.innerHTML = '<span class="spin white"></span> Memuat...';
+    google.script.run.withSuccessHandler(onDataLoaded).withFailureHandler(onError).COMMERCE_getDashboardData();
+  }
+
+  function onError(err) {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    var box = document.getElementById('errorBox');
+    box.style.display = 'block';
+    box.innerHTML = '<b>Gagal memuat data.</b> ' + (err && err.message ? err.message : err);
+    document.getElementById('refreshBtn').innerHTML = '&#8635; Refresh Data';
+  }
+
+  function onDataLoaded(data) {
+    RAW = data;
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('refreshBtn').innerHTML = '&#8635; Refresh Data';
+    document.getElementById('sourceLink').href = data.sourceUrl || '#';
+    renderLastUpdated();
+    populateFilterOptions();
+    applyFilters();
+  }
+
+  function renderLastUpdated() {
+    var d = new Date(RAW.generatedAt);
+    var opts = { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' };
+    document.getElementById('lastUpdated').textContent = 'Update terakhir: ' + d.toLocaleString('id-ID', opts);
+  }
+
+  // ============================================================================
+  // FORMATTERS
+  // ============================================================================
+  function formatRupiah(n) {
+    n = Math.round(n || 0);
+    return 'Rp' + n.toLocaleString('id-ID');
+  }
+  function formatCompact(n) {
+    n = n || 0;
+    var abs = Math.abs(n);
+    if (abs >= 1e9) return 'Rp' + (n / 1e9).toLocaleString('id-ID', {maximumFractionDigits:1}) + ' M';
+    if (abs >= 1e6) return 'Rp' + (n / 1e6).toLocaleString('id-ID', {maximumFractionDigits:1}) + ' Jt';
+    return formatRupiah(n);
+  }
+  function pct(a, b) {
+    if (!b) return '0%';
+    return ((a / b) * 100).toLocaleString('id-ID', {maximumFractionDigits:1}) + '%';
+  }
+  function statusColor(s) {
+    return (RAW && RAW.statusColor && RAW.statusColor[s]) || '#64748b';
+  }
+
+  // ============================================================================
+  // MULTI-SELECT FILTER COMPONENT
+  // ============================================================================
+  function populateFilterOptions() {
+    msInit('status', RAW.statusOrder, onFilterChange);
+    msInit('witel', uniqueSorted(RAW.records, 'witel'), onFilterChange);
+    msInit('program', uniqueSorted(RAW.records, 'program'), onFilterChange);
+    var bulans = uniqueSorted(RAW.records, 'bulan').sort(function (a, b) {
+      var ia = BULAN_ORDER.indexOf(a), ib = BULAN_ORDER.indexOf(b);
+      if (ia === -1) ia = 99; if (ib === -1) ib = 99;
+      return ia - ib;
+    });
+    msInit('bulan', bulans, onFilterChange);
+    msInit('porto', uniqueSorted(RAW.records, 'portofolio'), onFilterChange);
+  }
+
+  function uniqueSorted(records, key) {
+    var set = {};
+    records.forEach(function (r) { if (r[key]) set[r[key]] = true; });
+    return Object.keys(set).sort();
+  }
+
+  function msInit(key, options, onChange) {
+    MS[key].options = options;
+    if (onChange) MS[key].onChange = onChange;
+    renderMsPanel(key);
+    updateMsButton(key);
+  }
+
+  function renderMsPanel(key) {
+    var panel = document.getElementById('ms_' + key + '_panel');
+    var opts = MS[key].options;
+    if (!opts.length) {
+      panel.innerHTML = '<div class="ms-empty">Tidak ada opsi</div>';
+      return;
+    }
+    var html = '<div class="ms-actions">' +
+      '<button type="button" onclick="msSelectAll(\'' + key + '\')">Pilih semua</button>' +
+      '<button type="button" onclick="msClear(\'' + key + '\')">Kosongkan</button></div>';
+    html += opts.map(function (o) {
+      var checked = MS[key].selected[o] ? 'checked' : '';
+      return '<label class="ms-option"><input type="checkbox" ' + checked +
+        ' onchange="msToggle(\'' + key + '\', this)" data-val="' + esc(o) + '">' +
+        '<span title="' + esc(o) + '">' + esc(o) + '</span></label>';
+    }).join('');
+    panel.innerHTML = html;
+  }
+
+  function msFire(key) {
+    if (MS[key].onChange) MS[key].onChange();
+  }
+
+  function msToggle(key, el) {
+    var val = el.getAttribute('data-val');
+    if (el.checked) MS[key].selected[val] = true; else delete MS[key].selected[val];
+    updateMsButton(key);
+    msFire(key);
+  }
+
+  function msSelectAll(key) {
+    MS[key].options.forEach(function (o) { MS[key].selected[o] = true; });
+    renderMsPanel(key);
+    updateMsButton(key);
+    msFire(key);
+  }
+
+  function msClear(key) {
+    MS[key].selected = {};
+    renderMsPanel(key);
+    updateMsButton(key);
+    msFire(key);
+  }
+
+  function updateMsButton(key) {
+    var count = Object.keys(MS[key].selected).length;
+    var btn = document.getElementById('ms_' + key + '_btn');
+    if (count === 0) {
+      btn.innerHTML = MS_ALL_LABEL[key] + ' <span class="chev">&#9662;</span>';
+      btn.classList.remove('active-filter');
+    } else {
+      btn.innerHTML = count + ' ' + MS_LABEL[key] + ' dipilih <span class="chev">&#9662;</span>';
+      btn.classList.add('active-filter');
+    }
+  }
+
+  function toggleMs(key) {
+    var panel = document.getElementById('ms_' + key + '_panel');
+    var isOpen = panel.classList.contains('open');
+    document.querySelectorAll('.ms-panel').forEach(function (p) { p.classList.remove('open'); });
+    if (!isOpen) panel.classList.add('open');
+  }
+
+  function resetFilters() {
+    document.getElementById('fSearch').value = '';
+    ['status', 'witel', 'program', 'bulan', 'porto'].forEach(function (key) {
+      MS[key].selected = {};
+      renderMsPanel(key);
+      updateMsButton(key);
+    });
+    onFilterChange();
+  }
+
+  function onFilterChange() {
+    applyFilters();
+  }
+
+  // ============================================================================
+  // FILTER + RENDER PIPELINE
+  // ============================================================================
+  function applyFilters() {
+    if (!RAW) return;
+    var q = document.getElementById('fSearch').value.trim().toLowerCase();
+    var selStatus = MS.status.selected, selWitel = MS.witel.selected, selProgram = MS.program.selected,
+      selBulan = MS.bulan.selected, selPorto = MS.porto.selected;
+    var hasStatus = Object.keys(selStatus).length > 0;
+    var hasWitel = Object.keys(selWitel).length > 0;
+    var hasProgram = Object.keys(selProgram).length > 0;
+    var hasBulan = Object.keys(selBulan).length > 0;
+    var hasPorto = Object.keys(selPorto).length > 0;
+
+    FILTERED = RAW.records.filter(function (r) {
+      if (hasStatus && !selStatus[r.status]) return false;
+      if (hasWitel && !selWitel[r.witel]) return false;
+      if (hasProgram && !selProgram[r.program]) return false;
+      if (hasBulan && !selBulan[r.bulan]) return false;
+      if (hasPorto && !selPorto[r.portofolio]) return false;
+      if (q) {
+        var hay = (r.namaLop + ' ' + r.program + ' ' + r.witel + ' ' + r.sp + ' ' + r.kategori).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+
+    document.getElementById('filterCount').textContent =
+      FILTERED.length.toLocaleString('id-ID') + ' dari ' + RAW.totalRecords.toLocaleString('id-ID') + ' data';
+
+    renderKpis();
+    renderStatusChart();
+    renderWitelChart();
+    renderPortoChart();
+    renderTrendChart();
+    renderMatrix();
+  }
+
+  // ============================================================================
+  // KPI CARDS
+  // ============================================================================
+  function renderKpis() {
+    var totalPotensi = sum(FILTERED, 'nilaiPotensi');
+    var totalRealisasi = sum(FILTERED, 'nilaiRealisasi');
+    var doneSet = (RAW.statusDoneList || []);
+    var doneValue = sum(FILTERED.filter(function (r) { return doneSet.indexOf(r.status) !== -1; }), 'nilaiPotensi');
+    var outstanding = totalPotensi - doneValue;
+    var count = FILTERED.length;
+
+    var cards = [
+      {
+        label: 'Total Nilai Potensi', value: formatCompact(totalPotensi),
+        sub: formatRupiah(totalPotensi), color: 'var(--blue)'
+      },
+      {
+        label: 'Sudah BAST (Selesai)', value: formatCompact(doneValue),
+        sub: pct(doneValue, totalPotensi) + ' dari total potensi', color: 'var(--green)'
+      },
+      {
+        label: 'Dalam Proses', value: formatCompact(outstanding),
+        sub: pct(outstanding, totalPotensi) + ' belum BAST', color: 'var(--amber)'
+      },
+      {
+        label: 'Total Nilai Realisasi', value: formatCompact(totalRealisasi),
+        sub: pct(totalRealisasi, totalPotensi) + ' dari potensi', color: '#7c3aed'
+      },
+      {
+        label: 'Jumlah Berkas', value: count.toLocaleString('id-ID'),
+        sub: 'dari ' + RAW.totalRecords.toLocaleString('id-ID') + ' total data', color: 'var(--navy)'
+      }
+    ];
+
+    var grid = document.getElementById('kpiGrid');
+    grid.innerHTML = cards.map(function (c) {
+      return '<div class="kpi"><div class="bar" style="background:' + c.color + '"></div>' +
+        '<div class="label">' + c.label + '</div>' +
+        '<div class="value">' + c.value + '</div>' +
+        '<div class="sub">' + c.sub + '</div></div>';
+    }).join('');
+  }
+
+  function sum(arr, key) {
+    var t = 0; arr.forEach(function (r) { t += (r[key] || 0); }); return t;
+  }
+
+  // ============================================================================
+  // CHARTS
+  // ============================================================================
+  function destroyChart(name) {
+    if (charts[name]) { charts[name].destroy(); charts[name] = null; }
+  }
+
+  function renderStatusChart() {
+    var order = RAW.statusOrder;
+    var values = order.map(function (s) {
+      return sum(FILTERED.filter(function (r) { return r.status === s; }), 'nilaiPotensi');
+    });
+    var counts = order.map(function (s) {
+      return FILTERED.filter(function (r) { return r.status === s; }).length;
+    });
+    var colors = order.map(statusColor);
+
+    destroyChart('status');
+    var ctx = document.getElementById('statusChart').getContext('2d');
+    charts.status = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: order,
+        datasets: [{
+          label: 'Nilai Potensi',
+          data: values,
+          backgroundColor: colors,
+          borderRadius: 6,
+          maxBarThickness: 34
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (c) {
+                var i = c.dataIndex;
+                return ' ' + formatRupiah(c.parsed.x) + '  (' + counts[i] + ' berkas)';
+              }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { callback: function (v) { return formatCompact(v); } }, grid: { color: '#eef1f6' } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function renderWitelChart() {
+    var groups = groupSum(FILTERED, 'witel', 'nilaiPotensi');
+    var entries = Object.keys(groups).filter(function(k){return k;}).map(function (k) { return [k, groups[k]]; })
+      .sort(function (a, b) { return b[1] - a[1]; }).slice(0, 12);
+
+    destroyChart('witel');
+    var ctx = document.getElementById('witelChart').getContext('2d');
+    charts.witel = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: entries.map(function (e) { return e[0]; }),
+        datasets: [{
+          data: entries.map(function (e) { return e[1]; }),
+          backgroundColor: '#2563eb',
+          borderRadius: 6,
+          maxBarThickness: 28
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function (c) { return ' ' + formatRupiah(c.parsed.y); } } }
+        },
+        scales: {
+          y: { ticks: { callback: function (v) { return formatCompact(v); } }, grid: { color: '#eef1f6' } },
+          x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 40, minRotation: 0 } }
+        }
+      }
+    });
+  }
+
+  function renderPortoChart() {
+    var groups = groupSum(FILTERED, 'portofolio', 'nilaiPotensi');
+    var entries = Object.keys(groups).filter(function(k){return k;}).map(function (k) { return [k, groups[k]]; })
+      .sort(function (a, b) { return b[1] - a[1]; });
+    var palette = ['#2563eb', '#16a34a', '#d97706', '#7c3aed', '#0ea5e9', '#dc2626', '#64748b', '#0f172a'];
+
+    destroyChart('porto');
+    var ctx = document.getElementById('portoChart').getContext('2d');
+    charts.porto = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: entries.map(function (e) { return e[0]; }),
+        datasets: [{
+          data: entries.map(function (e) { return e[1]; }),
+          backgroundColor: entries.map(function (_, i) { return palette[i % palette.length]; }),
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
+          tooltip: { callbacks: { label: function (c) { return ' ' + c.label + ': ' + formatRupiah(c.parsed); } } }
+        }
+      }
+    });
+  }
+
+  function renderTrendChart() {
+    var groups = groupSum(FILTERED, 'bulan', 'nilaiPotensi');
+    var labels = BULAN_ORDER.filter(function (b) { return groups[b] !== undefined; });
+    // include any bulan not in standard list too
+    Object.keys(groups).forEach(function (k) { if (k && BULAN_ORDER.indexOf(k) === -1 && labels.indexOf(k) === -1) labels.push(k); });
+    var values = labels.map(function (b) { return groups[b] || 0; });
+
+    destroyChart('trend');
+    var ctx = document.getElementById('trendChart').getContext('2d');
+    charts.trend = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Nilai Potensi',
+          data: values,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,.12)',
+          fill: true,
+          tension: .3,
+          pointRadius: 4,
+          pointBackgroundColor: '#2563eb'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function (c) { return ' ' + formatRupiah(c.parsed.y); } } }
+        },
+        scales: {
+          y: { ticks: { callback: function (v) { return formatCompact(v); } }, grid: { color: '#eef1f6' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function groupSum(records, key, valueKey) {
+    var out = {};
+    records.forEach(function (r) {
+      var k = r[key] || '(Kosong)';
+      out[k] = (out[k] || 0) + (r[valueKey] || 0);
+    });
+    return out;
+  }
+
+  // ============================================================================
+  // MATRIX (Cabang x Program  x  Status Lapangan/Berkas)
+  // ============================================================================
+  function buildMatrix(records) {
+    var witelMap = {}, order = [];
+    records.forEach(function (r) {
+      var w = r.witel || '(Tanpa WITEL)';
+      var p = r.program || '(Tanpa Program)';
+      if (!witelMap[w]) { witelMap[w] = { programs: {}, programOrder: [], statusVals: {}, total: 0 }; order.push(w); }
+      var wg = witelMap[w];
+      if (!wg.programs[p]) { wg.programs[p] = { statusVals: {}, total: 0 }; wg.programOrder.push(p); }
+      var pg = wg.programs[p];
+      var v = r.nilaiPotensi || 0;
+      pg.statusVals[r.status] = (pg.statusVals[r.status] || 0) + v;
+      pg.total += v;
+      wg.statusVals[r.status] = (wg.statusVals[r.status] || 0) + v;
+      wg.total += v;
+    });
+    return { witelMap: witelMap, witelOrder: order };
+  }
+
+  function matrixCell(v) {
+    if (!v) return '<td class="zero">&ndash;</td>';
+    return '<td title="' + formatRupiah(v) + '">' + formatCompact(v) + '</td>';
+  }
+
+  function cellVal(v) {
+    if (!v) return '&ndash;';
+    return '<span title="' + formatRupiah(v) + '">' + formatCompact(v) + '</span>';
+  }
+
+  function renderMatrix() {
+    var statusCols = RAW.statusOrder;
+    var mx = buildMatrix(FILTERED);
+    var witelNames = mx.witelOrder.slice().sort(function (a, b) { return mx.witelMap[b].total - mx.witelMap[a].total; });
+
+    var theadHtml = '<tr><th>WITEL</th><th>Nama Program</th>' +
+      statusCols.map(function (s) { return '<th title="' + esc(s) + '">' + esc(s) + '</th>'; }).join('') +
+      '<th class="total-col">Total</th></tr>';
+
+    var grandStatusVals = {}, grandTotal = 0;
+    FILTERED.forEach(function (r) {
+      grandStatusVals[r.status] = (grandStatusVals[r.status] || 0) + (r.nilaiPotensi || 0);
+      grandTotal += (r.nilaiPotensi || 0);
+    });
+
+    var rowsHtml = '';
+    witelNames.forEach(function (w) {
+      var wg = mx.witelMap[w];
+      var progs = wg.programOrder.slice().sort(function (a, b) { return wg.programs[b].total - wg.programs[a].total; });
+      var rowspan = progs.length + 1;
+
+      progs.forEach(function (p, i) {
+        var pg = wg.programs[p];
+        rowsHtml += '<tr class="row-program">';
+        if (i === 0) {
+          rowsHtml += '<td class="witel-cell" rowspan="' + rowspan + '" title="' + esc(w) + '">' + esc(w) + '</td>';
+        }
+        rowsHtml += '<td title="' + esc(p) + '">' + esc(p) + '</td>' +
+          statusCols.map(function (s) { return matrixCell(pg.statusVals[s]); }).join('') +
+          '<td class="total-col">' + cellVal(pg.total) + '</td></tr>';
+      });
+
+      rowsHtml += '<tr class="row-total"><td>Total ' + esc(w) + '</td>' +
+        statusCols.map(function (s) { return matrixCell(wg.statusVals[s]); }).join('') +
+        '<td class="total-col">' + cellVal(wg.total) + '</td></tr>';
+    });
+
+    if (witelNames.length) {
+      rowsHtml += '<tr class="row-grand"><td colspan="2">GRAND TOTAL</td>' +
+        statusCols.map(function (s) { return matrixCell(grandStatusVals[s]); }).join('') +
+        '<td class="total-col">' + cellVal(grandTotal) + '</td></tr>';
+    }
+
+    document.getElementById('matrixHead').innerHTML = theadHtml;
+    document.getElementById('matrixBody').innerHTML = rowsHtml;
+    document.getElementById('matrixEmpty').style.display = witelNames.length ? 'none' : 'block';
+    document.getElementById('matrixScrollWrap').style.display = witelNames.length ? 'block' : 'none';
+  }
+
+  // ============================================================================
+  // CAPTURE GAMBAR (PNG) - menangkap SELURUH tabel/matriks di dalam elemen yang
+  // ditunjuk, bukan cuma area yang kelihatan di layar. Caranya: bikin klon
+  // tabel di luar area scroll (tanpa batas tinggi/lebar, tanpa sticky), baru
+  // di-capture beresolusi tinggi, lalu klon dibuang lagi. Dipakai bareng oleh
+  // semua panel (POTENSI SBT, Document Control, Mitratel).
+  // ============================================================================
+  function captureElement(containerId, btnId, titleText, filenamePrefix) {
+    if (typeof html2canvas === 'undefined') {
+      alert('Komponen capture belum siap dimuat, coba lagi sebentar lagi.');
+      return;
+    }
+    var btn = document.getElementById(btnId);
+    var originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Memproses...';
+
+    var container = document.getElementById(containerId);
+    var table = container ? container.querySelector('table') : null;
+    if (!table) { btn.disabled = false; btn.innerHTML = originalHtml; return; }
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'capture-mode';
+    wrapper.style.position = 'fixed';
+    wrapper.style.left = '-99999px';
+    wrapper.style.top = '0';
+    wrapper.style.background = '#ffffff';
+    wrapper.style.padding = '32px';
+    wrapper.style.fontFamily = getComputedStyle(document.body).fontFamily;
+    wrapper.style.width = 'max-content';
+    wrapper.style.zIndex = '-1';
+
+    var titleEl = document.createElement('div');
+    titleEl.style.fontSize = '22px';
+    titleEl.style.fontWeight = '800';
+    titleEl.style.color = '#0b1f3a';
+    titleEl.style.marginBottom = '4px';
+    titleEl.textContent = titleText;
+
+    var subEl = document.createElement('div');
+    subEl.style.fontSize = '15px';
+    subEl.style.color = '#64748b';
+    subEl.style.marginBottom = '20px';
+    var d = new Date();
+    var tgl = d.toLocaleString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    subEl.textContent = 'Diambil pada ' + tgl;
+
+    // Klon tabel: lepas batasan sticky/overflow supaya semua kolom & baris ikut ter-capture utuh.
+    var tableClone = table.cloneNode(true);
+    tableClone.style.width = 'auto';
+    tableClone.querySelectorAll('th, td').forEach(function (el) { el.style.position = 'static'; });
+
+    wrapper.appendChild(titleEl);
+    wrapper.appendChild(subEl);
+    wrapper.appendChild(tableClone);
+    document.body.appendChild(wrapper);
+
+    setTimeout(function () {
+      html2canvas(wrapper, { scale: 3, backgroundColor: '#ffffff', useCORS: true }).then(function (canvas) {
+        document.body.removeChild(wrapper);
+        canvas.toBlob(function (blob) {
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = filenamePrefix + '-' + Date.now() + '.png';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          btn.disabled = false; btn.innerHTML = originalHtml;
+        });
+      }).catch(function (err) {
+        if (wrapper.parentNode) document.body.removeChild(wrapper);
+        btn.disabled = false; btn.innerHTML = originalHtml;
+        alert('Gagal membuat gambar: ' + (err && err.message ? err.message : err));
+      });
+    }, 60);
+  }
+
+  // ============================================================================
+  // CSV EXPORT (detail per baris, untuk kebutuhan drill-down di luar dashboard)
+  // ============================================================================
+  function exportCsv() {
+    var header = ['No', 'Bulan', 'WITEL', 'Nama Program', 'Nama LOP', 'Status Lapangan/Berkas', 'Nilai Potensi', 'Nilai Realisasi'];
+    var rows = FILTERED.slice().sort(function (a, b) { return (a.no || 0) - (b.no || 0); });
+    var lines = [header.join(';')];
+    rows.forEach(function (r) {
+      lines.push([r.no, r.bulan, r.witel, csvSafe(r.program), csvSafe(r.namaLop), csvSafe(r.status), r.nilaiPotensi, r.nilaiRealisasi].join(';'));
+    });
+    var blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'detail-tagihan-potensi-sbt.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function csvSafe(s) {
+    s = String(s == null ? '' : s);
+    if (s.indexOf(';') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) {
+      s = '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  function esc(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // ============================================================================
+  // DOKUMEN CONTROL TELKOM GROUP  (sheet "Document Control")
+  // ============================================================================
+  function loadDocControl() {
+    document.getElementById('docLoading').style.display = 'block';
+    document.getElementById('docErrorBox').style.display = 'none';
+    document.getElementById('docMatrixScroll').style.display = 'none';
+    google.script.run.withSuccessHandler(onDocDataLoaded).withFailureHandler(onDocError).COMMERCE_getDocumentControlData();
+  }
+
+  function onDocError(err) {
+    document.getElementById('docLoading').style.display = 'none';
+    var box = document.getElementById('docErrorBox');
+    box.style.display = 'block';
+    box.innerHTML = '<b>Gagal memuat data Document Control.</b> ' + (err && err.message ? err.message : err);
+  }
+
+  function onDocDataLoaded(data) {
+    DOC_RAW = data;
+    document.getElementById('docLoading').style.display = 'none';
+    populateDocFilterOptions();
+    applyDocFilters();
+  }
+
+  function populateDocFilterOptions() {
+    msInit('docbranch', uniqueSorted(DOC_RAW.records, 'branch'), onDocFilterChange);
+    msInit('docpekerjaan', uniqueSorted(DOC_RAW.records, 'pekerjaan'), onDocFilterChange);
+  }
+
+  function resetDocFilters() {
+    document.getElementById('docSearch').value = '';
+    ['docbranch', 'docpekerjaan'].forEach(function (key) {
+      MS[key].selected = {};
+      renderMsPanel(key);
+      updateMsButton(key);
+    });
+    onDocFilterChange();
+  }
+
+  function onDocFilterChange() {
+    applyDocFilters();
+  }
+
+  function applyDocFilters() {
+    if (!DOC_RAW) return;
+    var q = document.getElementById('docSearch').value.trim().toLowerCase();
+    var selBranch = MS.docbranch.selected, selPekerjaan = MS.docpekerjaan.selected;
+    var hasBranch = Object.keys(selBranch).length > 0;
+    var hasPekerjaan = Object.keys(selPekerjaan).length > 0;
+
+    DOC_FILTERED = DOC_RAW.records.filter(function (r) {
+      if (hasBranch && !selBranch[r.branch]) return false;
+      if (hasPekerjaan && !selPekerjaan[r.pekerjaan]) return false;
+      if (q) {
+        var hay = (r.branch + ' ' + r.pekerjaan).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+
+    document.getElementById('docFilterCount').textContent =
+      DOC_FILTERED.length.toLocaleString('id-ID') + ' dari ' + DOC_RAW.totalRecords.toLocaleString('id-ID') + ' data';
+
+    renderDocKpis();
+    renderDocMatrix();
+  }
+
+  function docCategorize(status) {
+    if (status === '12. BAST' || status === 'OK') return 'done';
+    if (status === 'NOK') return 'nok';
+    if (!status || status === '-' || status === 'TIDAK ADA REKON') return 'kosong';
+    return 'proses';
+  }
+
+  function renderDocKpis() {
+    var months = DOC_RAW.months || [];
+    var lastMonth = months.length ? months[months.length - 1] : null;
+    var total = DOC_FILTERED.length;
+    var counts = { done: 0, nok: 0, proses: 0, kosong: 0 };
+    DOC_FILTERED.forEach(function (r) {
+      var s = lastMonth ? r.statuses[lastMonth] : '';
+      counts[docCategorize(s)]++;
+    });
+
+    var cards = [
+      { label: 'Sudah BAST/OK' + (lastMonth ? ' (' + lastMonth + ')' : ''), value: counts.done.toLocaleString('id-ID'), sub: pct(counts.done, total) + ' dari berkas terfilter', color: 'var(--green)' },
+      { label: 'NOK' + (lastMonth ? ' (' + lastMonth + ')' : ''), value: counts.nok.toLocaleString('id-ID'), sub: pct(counts.nok, total) + ' dari berkas terfilter', color: 'var(--red)' },
+      { label: 'Dalam Proses' + (lastMonth ? ' (' + lastMonth + ')' : ''), value: counts.proses.toLocaleString('id-ID'), sub: pct(counts.proses, total) + ' dari berkas terfilter', color: 'var(--amber)' },
+      { label: 'Belum Ada Aktivitas', value: counts.kosong.toLocaleString('id-ID'), sub: pct(counts.kosong, total) + ' dari berkas terfilter', color: 'var(--muted)' }
+    ];
+
+    document.getElementById('docKpiGrid').innerHTML = cards.map(function (c) {
+      return '<div class="kpi"><div class="bar" style="background:' + c.color + '"></div>' +
+        '<div class="label">' + c.label + '</div>' +
+        '<div class="value">' + c.value + '</div>' +
+        '<div class="sub">' + c.sub + '</div></div>';
+    }).join('');
+  }
+
+  // ---- Helper "pill" badge (dipakai bersama oleh Document Control & Mitratel) ----
+  function hexToRgb(hex) {
+    hex = String(hex || '').replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(function (c) { return c + c; }).join('');
+    var num = parseInt(hex, 16);
+    if (isNaN(num)) return { r: 100, g: 116, b: 139 }; // fallback slate
+    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+  }
+
+  function pill(hex, label) {
+    var rgb = hexToRgb(hex);
+    var bg = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',.13)';
+    var border = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',.38)';
+    return '<span class="pill" style="color:' + hex + ';background:' + bg + ';border-color:' + border + ';">' + esc(label) + '</span>';
+  }
+
+  function docStatusColor(s) {
+    if (!s || s === '-') return '#cbd5e1';
+    return (DOC_RAW && DOC_RAW.statusColor && DOC_RAW.statusColor[s]) || '#64748b';
+  }
+
+  function docBadge(s) {
+    if (!s || s === '-') return '<span style="color:#cbd5e1;">&ndash;</span>';
+    return pill(docStatusColor(s), s);
+  }
+
+  function buildDocMatrix(records) {
+    var branchMap = {}, order = [];
+    records.forEach(function (r) {
+      var b = r.branch || '(Tanpa Branch)';
+      if (!branchMap[b]) { branchMap[b] = { rows: [] }; order.push(b); }
+      branchMap[b].rows.push(r);
+    });
+    return { branchMap: branchMap, order: order };
+  }
+
+  function renderDocMatrix() {
+    var months = DOC_RAW.months || [];
+    var mx = buildDocMatrix(DOC_FILTERED);
+    var branches = mx.order.slice().sort();
+
+    var theadHtml = '<tr><th>Branch</th><th>Pekerjaan</th>' +
+      months.map(function (m) { return '<th style="text-align:center;">' + esc(m) + '</th>'; }).join('') + '</tr>';
+
+    var rowsHtml = '';
+    branches.forEach(function (b) {
+      var rows = mx.branchMap[b].rows;
+      var rowspan = rows.length;
+      rows.forEach(function (rec, i) {
+        rowsHtml += '<tr class="row-program">';
+        if (i === 0) rowsHtml += '<td class="witel-cell" rowspan="' + rowspan + '" title="' + esc(b) + '">' + esc(b) + '</td>';
+        rowsHtml += '<td title="' + esc(rec.pekerjaan) + '">' + esc(rec.pekerjaan) + '</td>' +
+          months.map(function (m) { return '<td style="text-align:center;">' + docBadge(rec.statuses[m]) + '</td>'; }).join('') +
+          '</tr>';
+      });
+    });
+
+    document.getElementById('docMatrixHead').innerHTML = theadHtml;
+    document.getElementById('docMatrixBody').innerHTML = rowsHtml;
+    var hasData = branches.length > 0;
+    document.getElementById('docEmpty').style.display = hasData ? 'none' : 'block';
+    document.getElementById('docMatrixScroll').style.display = hasData ? 'block' : 'none';
+  }
+
+  function exportDocCsv() {
+    var months = DOC_RAW.months || [];
+    var header = ['No', 'Branch', 'Pekerjaan'].concat(months);
+    var rows = DOC_FILTERED.slice().sort(function (a, b) {
+      if (a.branch !== b.branch) return a.branch < b.branch ? -1 : 1;
+      return a.pekerjaan < b.pekerjaan ? -1 : (a.pekerjaan > b.pekerjaan ? 1 : 0);
+    });
+    var lines = [header.map(csvSafe).join(';')];
+    rows.forEach(function (r) {
+      var cells = [r.no, csvSafe(r.branch), csvSafe(r.pekerjaan)];
+      months.forEach(function (m) { cells.push(csvSafe(r.statuses[m] || '-')); });
+      lines.push(cells.join(';'));
+    });
+    downloadCsv(lines, 'document-control-telkom-group.csv');
+  }
+
+  // ============================================================================
+  // POSISI BERKAS MITRATEL  (sheet "MS MTEL 2" + "PROGRESS MTEL 2")
+  // ============================================================================
+  function loadMitratel() {
+    document.getElementById('mtelKpiLoading').style.display = 'block';
+    document.getElementById('mtelKpiErrorBox').style.display = 'none';
+    document.getElementById('mtelKpiScroll').style.display = 'none';
+    document.getElementById('mtelProgressLoading').style.display = 'block';
+    document.getElementById('mtelProgressErrorBox').style.display = 'none';
+    document.getElementById('mtelProgressScroll').style.display = 'none';
+    google.script.run.withSuccessHandler(onMtelDataLoaded).withFailureHandler(onMtelError).COMMERCE_getMitratelData();
+  }
+
+  function onMtelError(err) {
+    var msg = '<b>Gagal memuat data Mitratel.</b> ' + (err && err.message ? err.message : err);
+    document.getElementById('mtelKpiLoading').style.display = 'none';
+    document.getElementById('mtelProgressLoading').style.display = 'none';
+    var kpiBox = document.getElementById('mtelKpiErrorBox');
+    kpiBox.style.display = 'block'; kpiBox.innerHTML = msg;
+    var progBox = document.getElementById('mtelProgressErrorBox');
+    progBox.style.display = 'block'; progBox.innerHTML = msg;
+  }
+
+  function onMtelDataLoaded(data) {
+    MTEL_RAW = data;
+    document.getElementById('mtelKpiLoading').style.display = 'none';
+    document.getElementById('mtelProgressLoading').style.display = 'none';
+    populateMtelFilterOptions();
+    renderMtelKpi();
+    applyMtelFilters();
+  }
+
+  function populateMtelFilterOptions() {
+    msInit('mtelwbs', uniqueSorted(MTEL_RAW.progress.records, 'wbs'), onMtelFilterChange);
+    msInit('mtelregional', uniqueSorted(MTEL_RAW.progress.records, 'regional'), onMtelFilterChange);
+    var bulans = uniqueSorted(MTEL_RAW.progress.records, 'bulan').sort(function (a, b) {
+      var ia = BULAN_ORDER.indexOf(a), ib = BULAN_ORDER.indexOf(b);
+      if (ia === -1) ia = 99; if (ib === -1) ib = 99;
+      return ia - ib;
+    });
+    msInit('mtelbulan', bulans, onMtelFilterChange);
+  }
+
+  function resetMtelFilters() {
+    document.getElementById('mtelSearch').value = '';
+    ['mtelwbs', 'mtelregional', 'mtelbulan'].forEach(function (key) {
+      MS[key].selected = {};
+      renderMsPanel(key);
+      updateMsButton(key);
+    });
+    onMtelFilterChange();
+  }
+
+  function onMtelFilterChange() {
+    applyMtelFilters();
+  }
+
+  function applyMtelFilters() {
+    if (!MTEL_RAW) return;
+    var q = document.getElementById('mtelSearch').value.trim().toLowerCase();
+    var selWbs = MS.mtelwbs.selected, selRegional = MS.mtelregional.selected, selBulan = MS.mtelbulan.selected;
+    var hasWbs = Object.keys(selWbs).length > 0;
+    var hasRegional = Object.keys(selRegional).length > 0;
+    var hasBulan = Object.keys(selBulan).length > 0;
+
+    MTEL_PROGRESS_FILTERED = MTEL_RAW.progress.records.filter(function (r) {
+      if (hasWbs && !selWbs[r.wbs]) return false;
+      if (hasRegional && !selRegional[r.regional]) return false;
+      if (hasBulan && !selBulan[r.bulan]) return false;
+      if (q) {
+        var hay = (r.wbs + ' ' + r.pic + ' ' + r.keterangan).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+
+    document.getElementById('mtelFilterCount').textContent =
+      MTEL_PROGRESS_FILTERED.length.toLocaleString('id-ID') + ' dari ' + MTEL_RAW.progress.records.length.toLocaleString('id-ID') + ' data';
+
+    renderMtelProgressTable();
+  }
+
+  function buildMtelKpiIndex(records) {
+    var idx = {};
+    records.forEach(function (r) { idx[r.regional + '|' + r.bulan] = r; });
+    return idx;
+  }
+
+  var MTEL_KPI_SUBCOLS = [
+    { key: 'approvalMgrTA', label: 'Appr. Mgr (TA)' },
+    { key: 'approvalMgrCDOM', label: 'Appr. Mgr CDOM (MTEL)' },
+    { key: 'horegTA', label: 'HOREG (TA)' },
+    { key: 'gmAreaMtel', label: 'GM Area (MTEL)' }
+  ];
+
+  function mtelBinaryColor(v) {
+    var up = String(v).toUpperCase();
+    return up === 'OK' ? '#059669' : (up === 'NOK' ? '#dc2626' : '#64748b');
+  }
+
+  function mtelStatusBadge(v) {
+    if (!v || v === '-') return '<span style="color:#cbd5e1;">&ndash;</span>';
+    return pill(mtelBinaryColor(v), v);
+  }
+
+  function renderMtelKpi() {
+    var months = MTEL_RAW.kpi.months || [];
+    var idx = buildMtelKpiIndex(MTEL_RAW.kpi.records);
+    var regions = uniqueSorted(MTEL_RAW.kpi.records, 'regional').sort(function (a, b) {
+      var ia = MTEL_REGION_ORDER.indexOf(a), ib = MTEL_REGION_ORDER.indexOf(b);
+      if (ia === -1) ia = 99; if (ib === -1) ib = 99;
+      return ia - ib;
+    });
+
+    // Header 2 tingkat: baris 1 = nama bulan (colspan 4), baris 2 = 4 sub-kolom status
+    // (Approval Mgr TA / CDOM, HOREG TA, GM Area MTEL), persis seperti sheet "MS MTEL 2".
+    var row1 = '<tr><th class="sticky-col1" rowspan="2">Regional MTEL</th>' +
+      months.map(function (m) {
+        return '<th colspan="' + MTEL_KPI_SUBCOLS.length + '" style="text-align:center;">' + esc(m) + '</th>';
+      }).join('') + '</tr>';
+    var row2 = '<tr>' +
+      months.map(function () {
+        return MTEL_KPI_SUBCOLS.map(function (sc) { return '<th style="text-align:center;">' + esc(sc.label) + '</th>'; }).join('');
+      }).join('') + '</tr>';
+
+    var rowsHtml = regions.map(function (reg) {
+      var cells = months.map(function (m) {
+        var rec = idx[reg + '|' + m];
+        var title = rec ? ('Nilai PO: ' + formatRupiah(rec.nilaiPO) + '  |  Realisasi: ' + formatRupiah(rec.realisasi) +
+          '  |  % Capaian: ' + rec.persen.toLocaleString('id-ID', { maximumFractionDigits: 1 }) + '%') : '';
+        return MTEL_KPI_SUBCOLS.map(function (sc) {
+          var v = rec ? rec[sc.key] : '';
+          return '<td style="text-align:center;" title="' + esc(title) + '">' + mtelStatusBadge(v) + '</td>';
+        }).join('');
+      }).join('');
+      return '<tr class="row-program"><td class="witel-cell sticky-col1">' + esc(reg) + '</td>' + cells + '</tr>';
+    }).join('');
+
+    document.getElementById('mtelKpiHead').innerHTML = row1 + row2;
+    document.getElementById('mtelKpiBody').innerHTML = rowsHtml;
+    document.getElementById('mtelKpiScroll').style.display = regions.length ? 'block' : 'none';
+  }
+
+  function mtelMilestoneBadge(v) {
+    if (!v || v === '-') return '<span style="color:#cbd5e1;">&ndash;</span>';
+    return pill(mtelBinaryColor(v), v);
+  }
+
+  function renderMtelProgressTable() {
+    var rows = MTEL_PROGRESS_FILTERED.slice().sort(function (a, b) {
+      var ia = BULAN_ORDER.indexOf(a.bulan), ib = BULAN_ORDER.indexOf(b.bulan);
+      if (ia === -1) ia = 99; if (ib === -1) ib = 99;
+      if (ia !== ib) return ia - ib;
+      if (a.wbs !== b.wbs) return a.wbs < b.wbs ? -1 : 1;
+      return a.regional < b.regional ? -1 : (a.regional > b.regional ? 1 : 0);
+    });
+
+    var body = document.getElementById('mtelProgressBody');
+    var empty = document.getElementById('mtelProgressEmpty');
+    var scroll = document.getElementById('mtelProgressScroll');
+
+    if (!rows.length) {
+      body.innerHTML = '';
+      empty.style.display = 'block';
+      scroll.style.display = 'none';
+      return;
+    }
+    empty.style.display = 'none';
+    scroll.style.display = 'block';
+
+    body.innerHTML = rows.map(function (r) {
+      return '<tr>' +
+        '<td title="' + esc(r.wbs) + '">' + esc(r.wbs) + '</td>' +
+        '<td>' + esc(r.regional) + '</td>' +
+        '<td style="text-align:left;">' + esc(r.bulan) + '</td>' +
+        '<td style="text-align:center;">' + mtelMilestoneBadge(r.rekon) + '</td>' +
+        '<td style="text-align:center;">' + mtelMilestoneBadge(r.sirkulir) + '</td>' +
+        '<td style="text-align:center;">' + mtelMilestoneBadge(r.baRekon) + '</td>' +
+        '<td style="text-align:center;">' + mtelMilestoneBadge(r.bast) + '</td>' +
+        '<td style="text-align:center;">' + mtelMilestoneBadge(r.msd) + '</td>' +
+        '<td class="total-col">' + (r.realisasi ? '<span title="' + formatRupiah(r.realisasi) + '">' + formatCompact(r.realisasi) + '</span>' : '&ndash;') + '</td>' +
+        '<td class="wrap-cell" title="' + esc(r.keterangan) + '">' + esc(r.keterangan || '-') + '</td>' +
+        '<td>' + esc(r.pic || '-') + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function exportMtelCsv() {
+    var header = ['WBS', 'Regional', 'Bulan', 'REKON', 'SIRKULIR', 'BA REKON', 'BAST', 'MSD', 'Realisasi', 'Keterangan', 'PIC'];
+    var rows = MTEL_PROGRESS_FILTERED.slice();
+    var lines = [header.map(csvSafe).join(';')];
+    rows.forEach(function (r) {
+      lines.push([
+        csvSafe(r.wbs), csvSafe(r.regional), csvSafe(r.bulan),
+        csvSafe(r.rekon), csvSafe(r.sirkulir), csvSafe(r.baRekon), csvSafe(r.bast), csvSafe(r.msd),
+        r.realisasi, csvSafe(r.keterangan), csvSafe(r.pic)
+      ].join(';'));
+    });
+    downloadCsv(lines, 'progress-pekerjaan-mitratel.csv');
+  }
+
+  function downloadCsv(lines, filename) {
+    var blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>
