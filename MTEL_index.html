@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard MTEL — Telkom Akses Sumbagteng</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root{
+    /* legacy aliases kept for compatibility with existing rules */
+    --red:var(--primary); --red-d:var(--primary-hover); --navy:var(--bg-main); --grey:var(--text-muted);
+    --bg:var(--bg-main); --card:var(--bg-card); --line:var(--border-color);
+    --ok:var(--success); --warn:var(--warning); --bad:var(--danger);
+
+    /* design tokens */
+    --bg-main:#0b1329;
+    --bg-card:rgba(18, 28, 56, 0.75);
+    --bg-card-solid:#132042;
+    --bg-card-hover:rgba(26, 40, 78, 0.9);
+    --bg-sidebar:#070d1e;
+    --bg-topbar:rgba(11, 19, 41, 0.85);
+    --border-color:rgba(255, 255, 255, 0.08);
+    --border-accent:rgba(99, 102, 241, 0.3);
+    --text-main:#f8fafc;
+    --text-muted:#94a3b8;
+    --text-subtle:#64748b;
+    --primary:#6366f1;
+    --primary-hover:#4f46e5;
+    --primary-light:rgba(99, 102, 241, 0.15);
+    --secondary:#06b6d4;
+    --success:#10b981;
+    --warning:#f59e0b;
+    --danger:#ef4444;
+    --info:#3b82f6;
+    --purple:#8b5cf6;
+    --pink:#ec4899;
+    --radius-sm:8px; --radius-md:12px; --radius-lg:18px; --radius-xl:24px;
+    --shadow-sm:0 4px 12px rgba(0,0,0,0.15);
+    --shadow-md:0 8px 24px rgba(0,0,0,0.25);
+    --shadow-lg:0 16px 36px rgba(0,0,0,0.35);
+    --shadow-glow:0 0 25px rgba(99,102,241,0.25);
+    --glass:rgba(18, 28, 56, 0.65);
+    --glass-border:rgba(255,255,255,0.1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',system-ui,-apple-system,sans-serif}
+  body{background:var(--bg-main);color:var(--text-main);font-size:14px}
+  .wrap{max-width:1440px;margin:0 auto;padding:16px}
+
+  header.top{background:linear-gradient(120deg,var(--navy) 0%,#1e1b4b 60%,var(--red-d) 130%);color:#fff;
+    padding:18px 24px;border-radius:var(--radius-lg);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+  header.top h1{font-size:20px;font-weight:700;letter-spacing:.3px}
+  header.top .sub{font-size:12px;opacity:.85;margin-top:3px}
+  header.top .stamp{font-size:11px;opacity:.8;text-align:right}
+  .btn{background:var(--primary);color:var(--text-main);border:none;border-radius:var(--radius-sm);padding:8px 14px;font-weight:600;cursor:pointer;font-size:12px}
+  .btn:hover{background:var(--primary-hover)}
+
+  /* Filter bar */
+  .filters{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--radius-md);padding:12px 16px;margin:14px 0;position:sticky;top:8px;z-index:1100;box-shadow:var(--shadow-sm)}
+  .filters .lbl{font-size:11px;font-weight:700;color:var(--grey);text-transform:uppercase;letter-spacing:.5px}
+  .msel{position:relative}
+  .msel-btn{min-width:190px;display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--bg-card-solid);
+    border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:9px 12px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-main)}
+  .msel-btn:hover{border-color:var(--red)}
+  .msel-btn .caret{font-size:10px;color:var(--grey)}
+  .msel-panel{position:absolute;top:calc(100% + 6px);left:0;background:var(--bg-card-solid);border:1px solid var(--line);border-radius:var(--radius-md);
+    box-shadow:var(--shadow-md);min-width:230px;max-height:320px;overflow:auto;padding:8px;display:none;z-index:1200}
+  .msel.open .msel-panel{display:block}
+  .msel-panel label{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;cursor:pointer;font-size:13px}
+  .msel-panel label:hover{background:var(--bg-card-hover)}
+  .msel-panel input{accent-color:var(--red);width:15px;height:15px}
+  .msel-all{border-bottom:1px solid var(--line);margin-bottom:5px;padding-bottom:5px;font-weight:700}
+  .chip{background:var(--primary-light);color:var(--primary-hover);border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700}
+  .reset{background:none;border:none;color:var(--red);font-weight:700;font-size:12px;cursor:pointer;text-decoration:underline}
+
+  .grid{display:grid;gap:14px}
+  .cards{grid-template-columns:repeat(auto-fit,minmax(165px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-md);padding:14px 16px;box-shadow:var(--shadow-sm)}
+  .kpi .t{font-size:11px;font-weight:700;color:var(--grey);text-transform:uppercase;letter-spacing:.4px}
+  .kpi .v{font-size:26px;font-weight:800;margin:4px 0 2px}
+  .kpi .d{font-size:11px;color:var(--grey)}
+  .kpi .d b.up{color:var(--bad)} .kpi .d b.down{color:var(--ok)}
+  .accent{border-top:3px solid var(--red)}
+
+  h2.sec{font-size:15px;font-weight:800;margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+  h2.sec .n{background:var(--red);color:#fff;border-radius:6px;width:22px;height:22px;display:inline-flex;
+    align-items:center;justify-content:center;font-size:12px}
+  .two{grid-template-columns:1fr 1fr} .three{grid-template-columns:2fr 1fr}
+  @media(max-width:980px){.two,.three{grid-template-columns:1fr}}
+  .card h3{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text-main)}
+  .card h3 small{color:var(--grey);font-weight:500}
+  .chart-box{position:relative;height:300px}
+  .chart-box.tall{height:360px}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{background:rgba(255,255,255,.04);text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;color:var(--grey);letter-spacing:.4px;border-bottom:2px solid var(--line)}
+  td{padding:7px 10px;border-bottom:1px solid var(--line)}
+  tr:hover td{background:rgba(255,255,255,.03)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .pill{padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+  .pill.ok{background:rgba(16,185,129,.15);color:var(--ok)} .pill.warn{background:rgba(245,158,11,.15);color:var(--warn)} .pill.bad{background:rgba(239,68,68,.15);color:var(--bad)}
+  .pill.grey{background:rgba(148,163,184,.15);color:var(--grey)}
+
+  .insight{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-left:4px solid var(--warn);border-radius:var(--radius-md);padding:12px 14px;font-size:13px;line-height:1.55;margin-top:10px}
+  .insight b{color:var(--text-main)}
+  .reco{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-left:4px solid var(--red);border-radius:var(--radius-md);padding:12px 14px;font-size:13px;line-height:1.6}
+
+  #map{height:480px;border-radius:var(--radius-md);z-index:1}
+  .legend{background:var(--bg-card-solid);color:var(--text-main);padding:10px 12px;border-radius:9px;box-shadow:var(--shadow-sm);font-size:12px;line-height:1.9}
+  .mk{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50% 50% 50% 0;
+    transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.35)}
+  .mk span{transform:rotate(45deg);font-size:14px}
+  .leaflet-popup-content{font-size:12px;line-height:1.5}
+
+  .rank2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:900px){.rank2{grid-template-columns:1fr}}
+  .medal{font-size:15px}
+  .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:90px 0;color:var(--grey);gap:14px}
+  .spin{width:38px;height:38px;border:4px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .err{background:rgba(239,68,68,.12);color:var(--danger);padding:16px;border-radius:var(--radius-md);font-weight:600}
+
+  /* Modal detail tiket */
+  .modal-bg{position:fixed;inset:0;background:rgba(2,6,20,.65);z-index:2000;display:none;align-items:center;justify-content:center;padding:16px}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--bg-card-solid);color:var(--text-main);border-radius:var(--radius-lg);max-width:520px;width:100%;max-height:88vh;overflow:auto;box-shadow:var(--shadow-lg)}
+  .modal-h{background:linear-gradient(120deg,var(--navy),#1e1b4b);color:#fff;padding:14px 18px;border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+    display:flex;justify-content:space-between;align-items:center;position:sticky;top:0}
+  .modal-h b{font-size:15px}
+  .modal-x{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1}
+  .modal-b{padding:8px 18px 16px}
+  .modal-b table{font-size:13px}
+  .modal-b td{padding:8px 6px}
+  .modal-b td.k{color:var(--grey);font-weight:600;width:42%;vertical-align:top}
+  tr.clickable{cursor:pointer}
+
+  .ytd-witel{margin-bottom:14px}
+  .ytd-witel .wt{font-size:13px;font-weight:800;color:var(--text-main);margin:10px 0 8px;display:flex;align-items:center;gap:8px}
+  .ytd-witel .wt .dot{width:9px;height:9px;border-radius:50%;background:var(--red)}
+  .foot{color:var(--grey);font-size:11px;margin:24px 0 10px;line-height:1.6}
+</style>
+<style>
+/* ============ TEMA 3D GLASS — MANAGE SERVICE FIBER OPTIC SUMBAGTENG ============ */
+body{
+  background:
+    radial-gradient(1100px 500px at 85% -10%, rgba(99,102,241,.14), transparent 60%),
+    radial-gradient(900px 550px at -10% 20%, rgba(139,92,246,.12), transparent 60%),
+    radial-gradient(700px 500px at 50% 110%, rgba(6,182,212,.10), transparent 60%),
+    var(--bg-main);
+  min-height:100vh;
+}
+/* jalur serat optik dekoratif */
+body::before{
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='600' viewBox='0 0 900 600'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M-50 480 C 200 420 350 560 620 470 S 900 380 980 420' stroke='%236366f1' stroke-opacity='.14' stroke-width='2.5'/%3E%3Cpath d='M-50 500 C 210 445 360 585 630 495 S 910 405 980 445' stroke='%238b5cf6' stroke-opacity='.14' stroke-width='2'/%3E%3Cpath d='M-50 520 C 220 470 370 610 640 520 S 920 430 980 470' stroke='%2306b6d4' stroke-opacity='.14' stroke-width='1.6'/%3E%3Cpath d='M-50 90 C 250 150 420 20 700 110 S 900 190 980 150' stroke='%236366f1' stroke-opacity='.12' stroke-width='2'/%3E%3Cpath d='M-50 70 C 260 135 430 5 710 95 S 905 175 980 135' stroke='%238b5cf6' stroke-opacity='.12' stroke-width='1.6'/%3E%3C/g%3E%3Cg fill='%236366f1' fill-opacity='.14'%3E%3Ccircle cx='620' cy='470' r='5'/%3E%3Ccircle cx='200' cy='438' r='4'/%3E%3Ccircle cx='700' cy='110' r='5'/%3E%3Ccircle cx='420' cy='63' r='4'/%3E%3C/g%3E%3Cg fill='%238b5cf6' fill-opacity='.14'%3E%3Ccircle cx='350' cy='560' r='4'/%3E%3Ccircle cx='840' cy='420' r='5'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:900px 600px;
+}
+.wrap{position:relative;z-index:1}
+
+/* Header 3D + identitas Sumbagteng */
+header.top{
+  position:relative; overflow:hidden;
+  background:linear-gradient(118deg,#0b1329 0%,#132042 40%,#1e1b4b 78%,var(--red-d) 110%);
+  box-shadow:var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.14);
+}
+header.top::before{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='700' height='140' viewBox='0 0 700 140'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M0 105 C 160 55 300 135 470 85 S 660 45 720 75' stroke='%23ffffff' stroke-opacity='.14' stroke-width='2'/%3E%3Cpath d='M0 115 C 170 68 310 148 480 98 S 665 58 720 88' stroke='%236366f1' stroke-opacity='.45' stroke-width='1.6'/%3E%3Cpath d='M0 125 C 180 82 320 158 490 110 S 670 70 720 100' stroke='%2306b6d4' stroke-opacity='.22' stroke-width='1.2'/%3E%3C/g%3E%3Cg%3E%3Ccircle cx='470' cy='85' r='4' fill='%236366f1' fill-opacity='.8'/%3E%3Ccircle cx='160' cy='69' r='3.2' fill='%23ffffff' fill-opacity='.55'/%3E%3Ccircle cx='620' cy='63' r='3.2' fill='%2306b6d4' fill-opacity='.6'/%3E%3C/g%3E%3Ctext x='545' y='128' font-family='Inter' font-size='34' font-weight='800' fill='%23ffffff' fill-opacity='.07' letter-spacing='6'%3ESUMBAGTENG%3C/text%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:bottom right; background-size:cover;
+}
+header.top > *{position:relative;z-index:1}
+header.top h1{text-shadow:0 2px 10px rgba(0,0,0,.35)}
+
+/* Logo PT Telkom Akses — pojok kanan atas */
+.logo-ta{
+  display:flex;align-items:center;gap:9px;background:var(--bg-card-solid);
+  border-radius:11px;padding:7px 13px;box-shadow:var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);
+}
+.logo-ta .mark{width:30px;height:30px;flex:none}
+.logo-ta .txt{line-height:1.05;font-size:13px;color:var(--text-muted);font-weight:600;letter-spacing:.2px}
+.logo-ta .txt b{color:var(--red);font-weight:800}
+.logo-ta .txt small{display:block;font-size:8.5px;color:var(--text-subtle);letter-spacing:1.6px;font-weight:700;margin-top:1px}
+
+/* Kartu kaca 3D transparan */
+.card{
+  background:var(--glass);
+  backdrop-filter:blur(16px) saturate(1.25); -webkit-backdrop-filter:blur(16px) saturate(1.25);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.05);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,.05)}
+.kpi .v{background:linear-gradient(120deg,var(--text-main),var(--red));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.filters{
+  background:var(--glass);
+  backdrop-filter:blur(16px) saturate(1.3); -webkit-backdrop-filter:blur(16px) saturate(1.3);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--shadow-md);
+}
+th{background:rgba(255,255,255,.05)}
+.insight,.reco{backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:var(--shadow-sm)}
+.insight{background:rgba(245,158,11,.08)} .reco{background:rgba(239,68,68,.08)}
+.msel-btn{background:var(--bg-card-solid)}
+
+/* Judul seksi bisa buka/tutup */
+h2.sec.togglable{
+  cursor:pointer;user-select:none;background:var(--glass);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--glass-border);border-left:4px solid var(--red);
+  border-radius:11px;padding:12px 15px;margin:14px 0 0;
+  box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.05);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+h2.sec.togglable:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+h2.sec.togglable .car{margin-left:auto;color:var(--red);font-size:13px;transition:transform .2s}
+.sec-body{padding-top:10px}
+#mapAll{height:480px;border-radius:var(--radius-md);z-index:1}
+
+/* Drilldown angka → daftar tiket */
+a.drill,.kpi.clickable{cursor:pointer}
+a.drill{color:inherit;text-decoration:none;border-bottom:1.5px dashed rgba(99,102,241,.55);padding-bottom:1px}
+a.drill:hover{color:var(--red);border-bottom-style:solid}
+.kpi.clickable:hover .t{color:var(--red)}
+.mlist td{cursor:pointer}
+.mlist tr:hover td{background:rgba(99,102,241,.12)}
+.mback{display:inline-block;margin-bottom:8px;color:var(--red);font-weight:700;font-size:12px;cursor:pointer}
+
+/* Teknisi bertugas hari ini */
+.duty-head{font-size:13px;font-weight:800;color:var(--text-main);margin:14px 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.duty-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:4px}
+.duty-card{padding:12px 14px}
+.duty-card .br{font-size:12.5px;font-weight:800;color:var(--red-d);text-transform:uppercase;letter-spacing:.5px;
+  border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.duty-card .sh{font-size:11px;font-weight:700;color:var(--grey);margin-top:7px}
+.duty-card ul{list-style:none;margin:3px 0 0}
+.duty-card li{font-size:12.5px;padding:2px 0;font-weight:600}
+.duty-card li small{color:var(--grey);font-weight:500}
+
+/* Chips filter RCA di peta */
+.rca-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;align-items:center}
+.rca-chips .ttl{font-size:11px;font-weight:800;color:var(--grey);text-transform:uppercase;letter-spacing:.5px;margin-right:3px}
+.rchip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:700;
+  cursor:pointer;border:1.5px solid;user-select:none;transition:all .13s;background:var(--bg-card-solid)}
+.rchip.off{opacity:.32;filter:grayscale(.6)}
+.rchip input{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top" style="justify-content:flex-end;">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
+      <div class="stamp" id="stamp">Memuat…</div>
+      <button class="btn" onclick="loadData()">⟳ Muat Ulang</button>
+      <!-- Logo PT Telkom Akses (ganti dengan <img src="URL_LOGO" height="34"> bila ada aset resmi) -->
+      <div class="logo-ta" title="PT Telkom Akses">
+        <svg class="mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="18" fill="#6366f1"/>
+          <path d="M6 24 C 13 14, 27 14, 34 24" stroke="#fff" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+          <circle cx="20" cy="15.5" r="3.4" fill="#fff"/>
+        </svg>
+        <div class="txt"><b>Telkom</b>Akses<small>PT TELKOM AKSES</small></div>
+      </div>
+    </div>
+  </header>
+
+  <div id="app" style="display:none">
+    <!-- TEKNISI BERTUGAS HARI INI -->
+    <div id="dutyWrap"></div>
+
+    <!-- FILTER -->
+    <div class="filters">
+      <span class="lbl">Filter</span>
+      <div class="msel" id="fWitel"></div>
+      <div class="msel" id="fBulan"></div>
+      <div class="msel" id="fOp"></div>
+      <span class="chip" id="fCount"></span>
+      <button class="reset" onclick="resetFilters()">Reset</button>
+    </div>
+
+    <!-- 1. KPI BULAN TERAKHIR -->
+    <h2 class="sec"><span class="n">1</span>Potret Pencapaian Bulan Terakhir <span id="kpiMonth" class="chip"></span></h2>
+    <div class="grid cards" id="kpiCards"></div>
+    <div class="card" style="margin-top:14px">
+      <h3>Pencapaian per Operator — Bulan Terakhir</h3>
+      <div style="overflow:auto"><table id="tblOpKpi"></table></div>
+    </div>
+
+    <!-- 1b. YTD PER WITEL -->
+    <h2 class="sec"><span class="n">★</span>Potret Pencapaian YTD per Witel <small style="color:var(--grey);font-weight:500">(akumulasi seluruh bulan sesuai filter)</small></h2>
+    <div id="ytdWrap"></div>
+
+    <!-- 2. TREND -->
+    <h2 class="sec"><span class="n">2</span>Trend Tiket, TTR NET &amp; RCA</h2>
+    <div class="grid two">
+      <div class="card"><h3>Trend Tiket per Bulan per Operator <small>+ garis MTTR NET</small></h3>
+        <div class="chart-box"><canvas id="chTrend"></canvas></div></div>
+      <div class="card"><h3>Trend Komposisi RCA per Bulan</h3>
+        <div class="chart-box"><canvas id="chTrendRca"></canvas></div></div>
+    </div>
+
+    <!-- 3. KUADRAN -->
+    <h2 class="sec"><span class="n">3</span>Kuadran Primary — Frekuensi Tiket vs TTR NET per RCA</h2>
+    <div class="grid three">
+      <div class="card"><h3>Kuadran RCA <small>(x = jumlah tiket, y = rata-rata TTR NET; ukuran titik = total jam gangguan)</small></h3>
+        <div class="chart-box tall"><canvas id="chQuad"></canvas></div></div>
+      <div class="card"><h3>Prioritas Penanganan (Kuadran PRIMARY)</h3>
+        <div style="overflow:auto"><table id="tblQuad"></table></div>
+        <div class="insight" id="insQuad"></div></div>
+    </div>
+
+    <!-- 4. PER OPERATOR -->
+    <h2 class="sec"><span class="n">4</span>Analisa per Operator</h2>
+    <div class="grid two">
+      <div class="card"><h3>Distribusi SLA per Operator</h3>
+        <div class="chart-box"><canvas id="chOpSla"></canvas></div></div>
+      <div class="card"><h3>Ringkasan per Operator — Periode Terfilter</h3>
+        <div style="overflow:auto"><table id="tblOpAll"></table></div></div>
+    </div>
+
+    <!-- 5. SEGMENT -->
+    <h2 class="sec"><span class="n">5</span>Analisa Segment Terganggu × Panjang TTR</h2>
+    <div class="grid two">
+      <div class="card"><h3>Rata-rata TTR NET &amp; Jumlah Tiket per Segment</h3>
+        <div class="chart-box"><canvas id="chSeg"></canvas></div></div>
+      <div class="card"><h3>Komposisi Kategori SLA per Segment</h3>
+        <div class="chart-box"><canvas id="chSegSla"></canvas></div></div>
+    </div>
+    <div class="insight" id="insSeg"></div>
+
+    <!-- 8. FASE WAKTU -->
+    <h2 class="sec"><span class="n">6</span>Time Respons vs Travel Time vs Time Progress per RCA</h2>
+    <div class="grid three">
+      <div class="card"><h3>Rata-rata Komposisi Waktu per RCA <small>(jam)</small></h3>
+        <div class="chart-box tall"><canvas id="chPhase"></canvas></div></div>
+      <div class="card"><h3>Fase Dominan Penyebab Over Time</h3>
+        <div style="overflow:auto"><table id="tblPhase"></table></div>
+        <div class="insight" id="insPhase"></div></div>
+    </div>
+
+    <!-- 9. SLA -->
+    <h2 class="sec"><span class="n">7</span>Kategori TTR NET: 0–4 Jam (In SLA) · 4–8 Jam (Out SLA) · &gt;8 Jam (High Attention)</h2>
+    <div class="grid two">
+      <div class="card"><h3>Distribusi Kategori SLA</h3>
+        <div class="chart-box"><canvas id="chSla"></canvas></div></div>
+      <div class="card"><h3>Kategori SLA per Witel</h3>
+        <div class="chart-box"><canvas id="chSlaWitel"></canvas></div></div>
+    </div>
+
+    <!-- 7a. PETA SEMUA TIKET -->
+    <h2 class="sec"><span class="n">8</span>Peta Sebaran Seluruh Tiket Gangguan — Ikon per Kelompok RCA</h2>
+    <div class="card">
+      <div class="rca-chips" id="rcaChips"></div>
+      <div id="mapAll"></div>
+      <div class="d" id="mapAllInfo" style="margin-top:8px;color:var(--grey);font-size:12px"></div>
+    </div>
+    <div class="insight" id="insMapAll"></div>
+
+    <!-- 7b. PETA TTR > 4 JAM -->
+    <h2 class="sec"><span class="n">9</span>Peta Tiket TTR NET &gt; 4 Jam — Ikon per Kelompok RCA</h2>
+    <div class="card">
+      <div id="map"></div>
+      <div class="d" id="mapInfo" style="margin-top:8px;color:var(--grey);font-size:12px"></div>
+    </div>
+
+    <!-- 6. CANCEL -->
+    <h2 class="sec"><span class="n">10</span>Tiket Cancel — Usulan Perbaikan Proses</h2>
+    <div class="grid three">
+      <div class="card">
+        <h3>Daftar Tiket Cancel <span class="chip" id="cancelCount"></span></h3>
+        <div style="overflow:auto;max-height:300px"><table id="tblCancel"></table></div>
+      </div>
+      <div class="reco" id="recoCancel"></div>
+    </div>
+
+    <!-- 10. TEKNISI -->
+    <h2 class="sec"><span class="n">11</span>Ranking Teknisi — Top 5 &amp; Bottom 5 <small style="color:var(--grey);font-weight:500">(min. 3 tiket closed, berdasarkan rata-rata TTR NET)</small></h2>
+    <div class="rank2">
+      <div class="card"><h3>🏆 Top 5 — TTR Tercepat</h3><table id="tblTop"></table></div>
+      <div class="card"><h3>⚠️ Bottom 5 — TTR Terlama</h3><table id="tblBottom"></table></div>
+    </div>
+
+    <p class="foot">
+      Metodologi: TTR yang dianalisis adalah <b>TTR NET (Jam)</b>. Tiket berstatus <b>Cancelled</b> dikeluarkan dari perhitungan
+      MTTR &amp; SLA (diusulkan tidak masuk performansi). Kategori SLA: ≤4 jam In SLA, 4–8 jam Out SLA, &gt;8 jam High Attention.
+      Kelompok RCA dinormalisasi dari kolom RCA / All RCA. Data dimuat langsung dari Google Sheets saat halaman dibuka.
+    </p>
+  </div>
+
+  <div id="loading" class="loading"><div class="spin"></div><div>Memuat data dari sheet "TIKET MTEL"…</div></div>
+  <div id="error" style="display:none" class="err"></div>
+</div>
+
+<!-- Modal detail tiket -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeTicket()">
+  <div class="modal">
+    <div class="modal-h"><b id="mTitle">Detail Tiket</b><button class="modal-x" onclick="closeTicket()">✕</button></div>
+    <div class="modal-b"><table id="mBody"></table></div>
+  </div>
+</div>
+
+<script>
+/* ================= STATE ================= */
+var ALL = [];            // semua tiket
+var FIL = { witel: [], bulan: [], op: [] };
+var charts = {};
+var map = null, mapLayer = null, BND1 = [];
+var mapAll = null, mapAllLayer = null, BND2 = [];
+var collapseReady = false;
+
+var MON = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+function monLabel(key){ if(!key||key.indexOf('-')<0) return key||'?'; var p=key.split('-'); return MON[+p[1]-1]+' '+p[0]; }
+
+var SLA_CAT = [
+  {k:'in',  label:'In SLA (≤4 jam)',          color:'#10b981'},
+  {k:'out', label:'Out SLA (4–8 jam)',         color:'#f59e0b'},
+  {k:'high',label:'High Attention (>8 jam)',   color:'#ef4444'}
+];
+function slaCat(ttr){ if(ttr==null) return null; if(ttr<=4) return 'in'; if(ttr<=8) return 'out'; return 'high'; }
+
+var RCA_STYLE = {
+  'Tertabrak Kendaraan':   {c:'#ef4444', i:'🚗'},
+  'Tersayat Benda Tajam':  {c:'#f59e0b', i:'🔪'},
+  'Vandalisme':            {c:'#8b5cf6', i:'✂️'},
+  'Gigitan Binatang':      {c:'#6d4c41', i:'🐀'},
+  'Terbakar':              {c:'#ff7043', i:'🔥'},
+  'Tertimpa Pohon':        {c:'#2e7d32', i:'🌳'},
+  'Pihak ke-3':            {c:'#3b82f6', i:'🚧'},
+  'Repair Closure':        {c:'#64748b', i:'🔧'},
+  'RK/ODC Plug-Unplug':    {c:'#ec4899', i:'🔌'},
+  'Ukur Normal / Non-Fisik':{c:'#10b981', i:'✅'},
+  'Tanpa RCA / Non-Teknis':{c:'#94a3b8', i:'❔'},
+  'Lainnya':               {c:'#64748b', i:'⚠️'}
+};
+function rcaGroup(t){
+  var s = ((t.allRca||'')+' '+(t.rca||'')+' '+(t.subseg||'')).toLowerCase();
+  if(!s.trim()) return 'Tanpa RCA / Non-Teknis';
+  if(s.indexOf('tertabrak')>=0) return 'Tertabrak Kendaraan';
+  if(s.indexOf('tersayat')>=0) return 'Tersayat Benda Tajam';
+  if(s.indexOf('vandal')>=0||s.indexOf('dipotong')>=0) return 'Vandalisme';
+  if(s.indexOf('gigitan')>=0) return 'Gigitan Binatang';
+  if(s.indexOf('terbakar')>=0) return 'Terbakar';
+  if(s.indexOf('pohon')>=0) return 'Tertimpa Pohon';
+  if(s.indexOf('ormas')>=0||s.indexOf('pihak ke-3')>=0||s.indexOf('pekerjaan pu')>=0) return 'Pihak ke-3';
+  if(s.indexOf('closure')>=0) return 'Repair Closure';
+  if(s.indexOf('plug')>=0) return 'RK/ODC Plug-Unplug';
+  if(s.indexOf('normal')>=0) return 'Ukur Normal / Non-Fisik';
+  if(s.replace(/[^a-z]/g,'')==='') return 'Tanpa RCA / Non-Teknis';
+  return 'Lainnya';
+}
+function isCancel(t){ return (t.status||'').toLowerCase().indexOf('cancel')>=0; }
+function isPerf(t){ return !isCancel(t) && t.ttr!=null && t.ttr>0; } // tiket yang dihitung performansinya
+
+var fmt1 = function(v){ return v==null?'–':(Math.round(v*100)/100).toLocaleString('id-ID',{maximumFractionDigits:2}); };
+var pct  = function(a,b){ return b>0 ? Math.round(a/b*1000)/10+'%' : '–'; };
+
+/* Statistik standar satu kumpulan tiket */
+function calcStats(set){
+  var perf=set.filter(isPerf);
+  var inSla=perf.filter(function(t){return slaCat(t.ttr)==='in';}).length;
+  return {
+    total:set.length, cancel:set.filter(isCancel).length,
+    closed:set.filter(function(t){return (t.status||'').toLowerCase().indexOf('closed')>=0;}).length,
+    perf:perf.length,
+    mttr:avg(perf,function(t){return t.ttr;}),
+    sla:perf.length? inSla/perf.length*100 : null,
+    high:perf.filter(function(t){return slaCat(t.ttr)==='high';}).length
+  };
+}
+
+/* ===== Modal detail tiket + drilldown daftar tiket ===== */
+var LISTS={}, LISTSEQ=0;
+function regList(title,tickets){ var k='L'+(++LISTSEQ); LISTS[k]={t:title,a:tickets||[]}; return k; }
+/* bungkus angka jadi link drilldown */
+function drill(tickets,title,display){
+  if(!tickets||!tickets.length) return display;
+  return '<a class="drill" onclick="event.stopPropagation();showList(\''+regList(title,tickets)+'\')">'+display+'</a>';
+}
+function showList(k){
+  var e=LISTS[k]; if(!e) return;
+  document.getElementById('mTitle').textContent=e.t+' — '+e.a.length+' tiket';
+  var rows=e.a.map(function(t,i){
+    return '<tr onclick="showTicketT(LISTS[\''+k+'\'].a['+i+'],\''+k+'\')">'+
+      '<td><b>'+(t.tt||'-')+'</b></td><td>'+t.witel+'</td><td>'+(t.open||'-')+'</td>'+
+      '<td class="num">'+(t.ttr==null?'-':fmt1(t.ttr))+'</td><td>'+(t.tek||'-')+'</td></tr>';
+  }).join('');
+  document.getElementById('mBody').innerHTML=
+    '<thead><tr><th>Nomor TT</th><th>Witel</th><th>Open</th><th class="num">TTR NET</th><th>Teknisi</th></tr></thead>'+
+    '<tbody class="mlist">'+rows+'</tbody>';
+  document.getElementById('mBody').classList.add('mlist');
+  document.getElementById('modalBg').classList.add('show');
+}
+function showTicketT(t, backKey){
+  var rows=[
+    ['Nomor TT', t.tt||'-'],
+    ['Witel', t.witel||'-'],
+    ['Site Down', t.site||'-'],
+    ['Start TT Open Time', t.open||'-'],
+    ['Segment', t.seg||'-'],
+    ['RCA', t.allRca||t.rca||'-'],
+    ['NIK Teknisi', t.nik||'-'],
+    ['Nama Teknisi', t.tek||'-'],
+    ['Time Respons', t.tr==null?'-':fmt1(t.tr)+' jam'],
+    ['Travel Time', t.tv==null?'-':fmt1(t.tv)+' jam'],
+    ['Time Progress', t.tp==null?'-':fmt1(t.tp)+' jam']
+  ];
+  document.getElementById('mTitle').textContent='Detail Tiket '+(t.tt||'');
+  document.getElementById('mBody').innerHTML=
+    (backKey?'<tr><td colspan="2"><span class="mback" onclick="showList(\''+backKey+'\')">← Kembali ke daftar</span></td></tr>':'')+
+    rows.map(function(r){
+      return '<tr><td class="k">'+r[0]+'</td><td><b>'+r[1]+'</b></td></tr>';
+    }).join('');
+  document.getElementById('modalBg').classList.add('show');
+}
+function closeTicket(){ document.getElementById('modalBg').classList.remove('show'); }
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeTicket(); });
+var CANC=[]; // referensi baris tabel cancel → tiket
+
+/* ================= LOAD ================= */
+function loadData(){
+  document.getElementById('loading').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('error').style.display='none';
+  google.script.run
+    .withSuccessHandler(function(json){
+      var d = JSON.parse(json);
+      ALL = d.tickets||[];
+      document.getElementById('stamp').innerHTML = 'Data: <b>'+ALL.length+'</b> tiket · Dimuat '+ d.generatedAt;
+      renderDuty(d.jadwal||{});
+      buildFilters();
+      renderAll();
+      setupCollapse();
+      document.getElementById('loading').style.display='none';
+      document.getElementById('app').style.display='block';
+    })
+    .withFailureHandler(function(e){
+      document.getElementById('loading').style.display='none';
+      var el=document.getElementById('error'); el.style.display='block';
+      el.textContent='Gagal memuat data: '+(e&&e.message?e.message:e);
+    })
+    .MTEL_getDashboardData();
+}
+
+/* ===== Teknisi bertugas hari ini (sheet JADWAL TEKNISI MTEL) ===== */
+function renderDuty(j){
+  var el=document.getElementById('dutyWrap');
+  if(!j || !j.rows || !j.rows.length){
+    el.innerHTML = j&&j.error
+      ? '<div class="duty-head">👷 Teknisi Bertugas — <span style="color:var(--grey);font-weight:500">'+j.error+'</span></div>'
+      : '';
+    return;
+  }
+  var byBr=groupBy(j.rows,function(r){return r.branch||'(Tanpa Branch)';});
+  var order=['PAGI','SIANG','MALAM'], icons={PAGI:'☀️',SIANG:'🌤️',MALAM:'🌙'};
+  var cards=Object.keys(byBr).sort().map(function(br){
+    var byS=groupBy(byBr[br],function(r){return r.shift;});
+    var body=order.filter(function(s){return byS[s];}).map(function(s){
+      return '<div class="sh">'+icons[s]+' Shift '+s.charAt(0)+s.slice(1).toLowerCase()+'</div><ul>'+
+        byS[s].map(function(r){
+          return '<li>'+r.nama+(r.job?' <small>· '+r.job+'</small>':'')+'</li>';
+        }).join('')+'</ul>';
+    }).join('');
+    return '<div class="card duty-card"><div class="br">📍 Branch '+br.charAt(0)+br.slice(1).toLowerCase()+
+      ' <span class="chip" style="margin-left:auto">'+byBr[br].length+'</span></div>'+body+'</div>';
+  }).join('');
+  el.innerHTML='<div class="duty-head">👷 Teknisi Bertugas '+(j.label==='Hari ini'?'Hari Ini':'')+
+    ' — <span class="chip">'+(j.tanggal||'-')+'</span>'+
+    (j.label && j.label!=='Hari ini'?' <span style="color:var(--grey);font-weight:500;font-size:11px">('+j.label+')</span>':'')+
+    '</div><div class="duty-grid">'+cards+'</div>';
+}
+
+/* ================= MULTISELECT ================= */
+function uniqSorted(arr){ var s={}; arr.forEach(function(v){ if(v) s[v]=1; }); return Object.keys(s).sort(); }
+
+function buildMultiSelect(elId, title, options, selected, labelFn, onChange){
+  var root = document.getElementById(elId);
+  root.innerHTML='';
+  var btn = document.createElement('div'); btn.className='msel-btn';
+  var panel = document.createElement('div'); panel.className='msel-panel';
+
+  function refreshBtn(){
+    var txt = selected.length===0||selected.length===options.length ? 'Semua '+title+' ('+options.length+')'
+      : selected.length<=2 ? selected.map(labelFn).join(', ')
+      : selected.length+' '+title+' dipilih';
+    btn.innerHTML='<span>'+txt+'</span><span class="caret">▼</span>';
+  }
+  // Pilih semua
+  var la=document.createElement('label'); la.className='msel-all';
+  var ca=document.createElement('input'); ca.type='checkbox';
+  ca.checked = selected.length===0||selected.length===options.length;
+  la.appendChild(ca); la.appendChild(document.createTextNode(' Pilih Semua'));
+  ca.addEventListener('change',function(){
+    selected.length=0;
+    if(ca.checked) options.forEach(function(o){selected.push(o);});
+    panel.querySelectorAll('input.opt').forEach(function(i){ i.checked=ca.checked; });
+    refreshBtn(); onChange();
+  });
+  panel.appendChild(la);
+
+  options.forEach(function(o){
+    var l=document.createElement('label');
+    var c=document.createElement('input'); c.type='checkbox'; c.className='opt'; c.value=o;
+    c.checked = selected.length===0 || selected.indexOf(o)>=0;
+    l.appendChild(c); l.appendChild(document.createTextNode(' '+labelFn(o)));
+    c.addEventListener('change',function(){
+      var i=selected.indexOf(o);
+      if(c.checked && i<0) selected.push(o);
+      if(!c.checked){ if(selected.length===0){ options.forEach(function(x){ if(x!==o) selected.push(x);}); } else if(i>=0) selected.splice(i,1); }
+      ca.checked = selected.length===options.length;
+      refreshBtn(); onChange();
+    });
+    panel.appendChild(l);
+  });
+
+  if(selected.length===0) options.forEach(function(o){selected.push(o);});
+  refreshBtn();
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    document.querySelectorAll('.msel.open').forEach(function(m){ if(m!==root) m.classList.remove('open'); });
+    root.classList.toggle('open');
+  });
+  root.appendChild(btn); root.appendChild(panel);
+}
+document.addEventListener('click',function(){ document.querySelectorAll('.msel.open').forEach(function(m){m.classList.remove('open');}); });
+document.addEventListener('click',function(e){ if(e.target.closest('.msel-panel')) e.stopPropagation(); }, true);
+
+function buildFilters(){
+  var witels = uniqSorted(ALL.map(function(t){return t.witel;}));
+  var bulans = uniqSorted(ALL.map(function(t){return t.bulan;}));
+  var ops    = uniqSorted(ALL.map(function(t){return t.op;}));
+  FIL.witel=[]; FIL.bulan=[]; FIL.op=[];
+  buildMultiSelect('fWitel','Witel',witels,FIL.witel,function(w){return 'Witel '+w.charAt(0)+w.slice(1).toLowerCase();},renderAll);
+  buildMultiSelect('fBulan','Bulan',bulans,FIL.bulan,monLabel,renderAll);
+  buildMultiSelect('fOp','Operator',ops,FIL.op,function(o){return o;},renderAll);
+}
+function resetFilters(){ buildFilters(); renderAll(); }
+
+function filtered(){
+  return ALL.filter(function(t){
+    return (FIL.witel.length===0||FIL.witel.indexOf(t.witel)>=0)
+        && (FIL.bulan.length===0||FIL.bulan.indexOf(t.bulan)>=0)
+        && (FIL.op.length===0||FIL.op.indexOf(t.op)>=0);
+  });
+}
+
+/* ================= AGGREGATION HELPERS ================= */
+function groupBy(arr, keyFn){ var g={}; arr.forEach(function(t){ var k=keyFn(t); (g[k]=g[k]||[]).push(t); }); return g; }
+function avg(arr, fn){ var v=arr.map(fn).filter(function(x){return x!=null;}); return v.length? v.reduce(function(a,b){return a+b;},0)/v.length : null; }
+function sum(arr, fn){ return arr.map(fn).filter(function(x){return x!=null;}).reduce(function(a,b){return a+b;},0); }
+
+function destroy(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+function mk(id, cfg){ destroy(id); charts[id]=new Chart(document.getElementById(id).getContext('2d'), cfg); }
+
+var OP_COLORS = ['#ef4444','#6366f1','#3b82f6','#f59e0b','#8b5cf6','#10b981'];
+
+/* ================= RENDER ================= */
+var LAST_DATA=[];
+function renderAll(){
+  var data = filtered();
+  LAST_DATA = data;
+  LISTS={}; LISTSEQ=0; // reset registry drilldown
+  document.getElementById('fCount').textContent = data.length+' tiket';
+  renderKpi(data);
+  renderYtd(data);
+  renderTrend(data);
+  renderQuadrant(data);
+  renderOperator(data);
+  renderSegment(data);
+  renderPhase(data);
+  renderSla(data);
+  renderMapAll(data);
+  renderMap(data);
+  renderCancel(data);
+  renderTech(data);
+}
+
+/* ===== Seksi buka/tutup (default tertutup) ===== */
+function setupCollapse(){
+  if(collapseReady) return; collapseReady=true;
+  var app=document.getElementById('app');
+  var kids=Array.prototype.slice.call(app.children);
+  var secs=[], cur=null;
+  kids.forEach(function(el){
+    if(el.classList&&el.classList.contains('filters')) return;
+    if(el.classList&&el.classList.contains('foot')) { cur=null; return; }
+    if(el.tagName==='H2'&&el.classList.contains('sec')){
+      var b=document.createElement('div'); b.className='sec-body';
+      app.insertBefore(b, el.nextSibling);
+      cur=b; secs.push({h:el,b:b});
+    } else if(cur){ cur.appendChild(el); }
+  });
+  secs.forEach(function(s){
+    s.h.classList.add('togglable');
+    s.b.style.display='none'; // default tertutup
+    var car=document.createElement('span'); car.className='car'; car.textContent='▸ buka';
+    s.h.appendChild(car);
+    s.h.addEventListener('click',function(){
+      var closed = s.b.style.display==='none';
+      s.b.style.display = closed?'block':'none';
+      car.textContent = closed?'▾ tutup':'▸ buka';
+      if(closed){
+        setTimeout(function(){
+          Object.keys(charts).forEach(function(k){ try{charts[k].resize();}catch(e){} });
+          if(map){ map.invalidateSize(); if(BND1.length) map.fitBounds(BND1,{padding:[35,35],maxZoom:11}); }
+          if(mapAll){ mapAll.invalidateSize(); if(BND2.length) mapAll.fitBounds(BND2,{padding:[35,35],maxZoom:11}); }
+        },80);
+      }
+    });
+  });
+}
+
+/* ---- 1. KPI bulan terakhir ---- */
+function renderKpi(data){
+  var months = uniqSorted(data.map(function(t){return t.bulan;}));
+  var last = months[months.length-1], prev = months[months.length-2];
+  document.getElementById('kpiMonth').textContent = last?monLabel(last):'—';
+  var cur = data.filter(function(t){return t.bulan===last;});
+  var pre = prev? data.filter(function(t){return t.bulan===prev;}) : [];
+
+  var c=calcStats(cur), p=calcStats(pre);
+  function delta(a,b,goodDown){
+    if(b==null||a==null||!pre.length) return '';
+    var d=a-b; if(Math.abs(d)<0.005) return '<b>= stabil</b> vs '+monLabel(prev);
+    var up=d>0, good = goodDown? !up : up;
+    return '<b class="'+(good?'down':'up')+'">'+(up?'▲':'▼')+' '+fmt1(Math.abs(d))+'</b> vs '+monLabel(prev);
+  }
+  var perfCur=cur.filter(isPerf);
+  var mLbl=last?monLabel(last):'';
+  var cards=[
+    {t:'Total Tiket', v:c.total, d:delta(c.total,p.total,true), a:cur},
+    {t:'Tiket Closed', v:c.closed, d:delta(c.closed,p.closed,false), a:cur.filter(function(t){return (t.status||'').toLowerCase().indexOf('closed')>=0;})},
+    {t:'MTTR NET (Jam)', v:fmt1(c.mttr), d:delta(c.mttr,p.mttr,true), a:perfCur},
+    {t:'% In SLA ≤4 Jam', v:c.sla==null?'–':fmt1(c.sla)+'%', d:delta(c.sla,p.sla,false), a:perfCur.filter(function(t){return slaCat(t.ttr)==='in';})},
+    {t:'High Attention >8 Jam', v:c.high, d:delta(c.high,p.high,true), a:perfCur.filter(function(t){return slaCat(t.ttr)==='high';})},
+    {t:'Tiket Cancel', v:c.cancel, d:delta(c.cancel,p.cancel,true), a:cur.filter(isCancel)}
+  ];
+  document.getElementById('kpiCards').innerHTML = cards.map(function(k){
+    var key=k.a&&k.a.length? regList(k.t+' — '+mLbl, k.a) : null;
+    return '<div class="card kpi accent'+(key?' clickable" onclick="showList(\''+key+'\')"':'"')+
+      ' title="Klik untuk daftar tiket"><div class="t">'+k.t+'</div><div class="v">'+k.v+'</div><div class="d">'+(k.d||'&nbsp;')+'</div></div>';
+  }).join('');
+
+  // per operator bulan terakhir
+  var byOp = groupBy(cur, function(t){return t.op;});
+  var rows = Object.keys(byOp).sort().map(function(op){
+    var set=byOp[op], perfO=set.filter(isPerf);
+    var s=calcStats(set);
+    var slaCls = s.sla==null?'grey':(s.sla>=95?'ok':(s.sla>=85?'warn':'bad'));
+    var pfx=op+' '+mLbl+' — ';
+    return '<tr><td><b>'+op+'</b></td>'+
+      '<td class="num">'+drill(set,pfx+'Semua Tiket',s.total)+'</td>'+
+      '<td class="num">'+drill(set.filter(function(t){return (t.status||'').toLowerCase().indexOf('closed')>=0;}),pfx+'Closed',s.closed)+'</td>'+
+      '<td class="num">'+drill(set.filter(isCancel),pfx+'Cancel',s.cancel)+'</td>'+
+      '<td class="num">'+drill(perfO,pfx+'Tiket Performansi (MTTR)',fmt1(s.mttr))+'</td>'+
+      '<td class="num"><span class="pill '+slaCls+'">'+drill(perfO.filter(function(t){return slaCat(t.ttr)==='in';}),pfx+'In SLA ≤4 Jam',(s.sla==null?'–':fmt1(s.sla)+'%'))+'</span></td>'+
+      '<td class="num">'+drill(perfO.filter(function(t){return slaCat(t.ttr)==='high';}),pfx+'>8 Jam',s.high)+'</td></tr>';
+  }).join('');
+  document.getElementById('tblOpKpi').innerHTML =
+    '<thead><tr><th>Operator</th><th class="num">Tiket</th><th class="num">Closed</th><th class="num">Cancel</th>'+
+    '<th class="num">MTTR NET</th><th class="num">% In SLA</th><th class="num">&gt;8 Jam</th></tr></thead><tbody>'+rows+'</tbody>';
+}
+
+/* ---- 1b. YTD per Witel (akumulasi sesuai filter multi-choice) ---- */
+function renderYtd(data){
+  var witels=uniqSorted(data.map(function(t){return t.witel;}));
+  function cardsHtml(set, lbl){
+    var s=calcStats(set), perfS=set.filter(isPerf);
+    var cards=[
+      {t:'Total Tiket', v:s.total, a:set},
+      {t:'Tiket Closed', v:s.closed, a:set.filter(function(t){return (t.status||'').toLowerCase().indexOf('closed')>=0;})},
+      {t:'MTTR NET (Jam)', v:fmt1(s.mttr), a:perfS},
+      {t:'% In SLA ≤4 Jam', v:s.sla==null?'–':fmt1(s.sla)+'%', a:perfS.filter(function(t){return slaCat(t.ttr)==='in';})},
+      {t:'High Attention >8 Jam', v:s.high+(s.perf?' <span style="font-size:12px;color:var(--grey)">('+pct(s.high,s.perf)+')</span>':''), a:perfS.filter(function(t){return slaCat(t.ttr)==='high';})},
+      {t:'Tiket Cancel', v:s.cancel+(s.total?' <span style="font-size:12px;color:var(--grey)">('+pct(s.cancel,s.total)+')</span>':''), a:set.filter(isCancel)}
+    ];
+    return '<div class="grid cards">'+cards.map(function(k){
+      var key=k.a&&k.a.length? regList('YTD '+lbl+' — '+k.t, k.a) : null;
+      return '<div class="card kpi accent'+(key?' clickable" onclick="showList(\''+key+'\')"':'"')+
+        ' title="Klik untuk daftar tiket"><div class="t">'+k.t+'</div><div class="v">'+k.v+'</div><div class="d">&nbsp;</div></div>';
+    }).join('')+'</div>';
+  }
+  var html = witels.map(function(w){
+    var set=data.filter(function(t){return t.witel===w;});
+    return '<div class="ytd-witel"><div class="wt"><span class="dot"></span>Witel '+
+      w.charAt(0)+w.slice(1).toLowerCase()+'</div>'+cardsHtml(set,'Witel '+w)+'</div>';
+  }).join('');
+  // total gabungan
+  html += '<div class="ytd-witel"><div class="wt"><span class="dot" style="background:var(--navy)"></span>Total Sumbagteng (Terfilter)</div>'+
+    cardsHtml(data,'Sumbagteng')+'</div>';
+  document.getElementById('ytdWrap').innerHTML = html || '<div class="card">Tidak ada data pada filter ini.</div>';
+}
+
+/* ---- 2. Trend ---- */
+function renderTrend(data){
+  var months = uniqSorted(data.map(function(t){return t.bulan;}));
+  var ops = uniqSorted(data.map(function(t){return t.op;}));
+  var ds = ops.map(function(op,i){
+    return { label:op, type:'bar', stack:'tiket',
+      data: months.map(function(m){ return data.filter(function(t){return t.bulan===m&&t.op===op;}).length; }),
+      backgroundColor: OP_COLORS[i%OP_COLORS.length], borderRadius:4, yAxisID:'y' };
+  });
+  ds.push({ label:'MTTR NET (jam)', type:'line',
+    data: months.map(function(m){ return avg(data.filter(function(t){return t.bulan===m&&isPerf(t);}),function(t){return t.ttr;}); }),
+    borderColor:'#f8fafc', backgroundColor:'#f8fafc', borderWidth:2.5, pointRadius:4, tension:.3, yAxisID:'y2' });
+  mk('chTrend',{ data:{labels:months.map(monLabel),datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+      scales:{ x:{stacked:true,grid:{display:false}}, y:{stacked:true,title:{display:true,text:'Jumlah tiket'}},
+        y2:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'MTTR NET (jam)'}} } }});
+
+  // trend RCA (top 6 kelompok)
+  var perfAll = data.filter(function(t){return !isCancel(t);});
+  var byR = groupBy(perfAll, rcaGroup);
+  var top = Object.keys(byR).sort(function(a,b){return byR[b].length-byR[a].length;}).slice(0,6);
+  var ds2 = top.map(function(g){
+    var st = RCA_STYLE[g]||RCA_STYLE['Lainnya'];
+    return { label:g, data: months.map(function(m){ return byR[g].filter(function(t){return t.bulan===m;}).length; }),
+      backgroundColor: st.c, borderRadius:3, stack:'rca' };
+  });
+  mk('chTrendRca',{ type:'bar', data:{labels:months.map(monLabel),datasets:ds2},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,title:{display:true,text:'Jumlah tiket'}}}}});
+}
+
+/* ---- 3. Kuadran ---- */
+function renderQuadrant(data){
+  var perf = data.filter(isPerf);
+  var byR = groupBy(perf, rcaGroup);
+  var pts = Object.keys(byR).map(function(g){
+    var arr=byR[g];
+    return { g:g, x:arr.length, y:avg(arr,function(t){return t.ttr;})||0, tot:sum(arr,function(t){return t.ttr;}),
+      lk:regList('RCA: '+g, arr) };
+  });
+  var mx = avg(pts,function(p){return p.x;})||0, my = avg(pts,function(p){return p.y;})||0;
+  var maxTot = Math.max.apply(null, pts.map(function(p){return p.tot;}).concat([1]));
+
+  var quadPlugin = {
+    id:'quad', afterDraw:function(chart){
+      var a=chart.chartArea, sx=chart.scales.x, sy=chart.scales.y, ctx=chart.ctx;
+      var px=sx.getPixelForValue(mx), py=sy.getPixelForValue(my);
+      ctx.save(); ctx.strokeStyle='rgba(148,163,184,.45)'; ctx.setLineDash([6,5]); ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(px,a.top); ctx.lineTo(px,a.bottom); ctx.moveTo(a.left,py); ctx.lineTo(a.right,py); ctx.stroke();
+      ctx.setLineDash([]); ctx.font='bold 10px Segoe UI'; ctx.fillStyle='rgba(239,68,68,.85)';
+      ctx.fillText('PRIMARY: Sering & Lama', px+8, a.top+14);
+      ctx.fillStyle='rgba(148,163,184,.85)';
+      ctx.fillText('Jarang & Lama', a.left+6, a.top+14);
+      ctx.fillText('Jarang & Cepat', a.left+6, a.bottom-8);
+      ctx.fillText('Sering & Cepat', px+8, a.bottom-8);
+      ctx.restore();
+    }};
+  mk('chQuad',{ type:'bubble',
+    data:{datasets:[{ label:'RCA',
+      data:pts.map(function(p){return {x:p.x,y:p.y,r:6+18*Math.sqrt(p.tot/maxTot),g:p.g,lk:p.lk};}),
+      backgroundColor:pts.map(function(p){return (RCA_STYLE[p.g]||RCA_STYLE['Lainnya']).c+'CC';}),
+      borderColor:pts.map(function(p){return (RCA_STYLE[p.g]||RCA_STYLE['Lainnya']).c;}), borderWidth:1.5 }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      onClick:function(e,els){ if(els.length){ var d=charts.chQuad.data.datasets[els[0].datasetIndex].data[els[0].index]; if(d.lk) showList(d.lk); } },
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(c){var d=c.raw;
+        return d.g+': '+d.x+' tiket · rata-rata TTR '+fmt1(d.y)+' jam (klik untuk daftar)';}}}},
+      scales:{x:{title:{display:true,text:'Jumlah tiket'},beginAtZero:true},
+              y:{title:{display:true,text:'Rata-rata TTR NET (jam)'},beginAtZero:true}}},
+    plugins:[quadPlugin]});
+
+  var primary = pts.filter(function(p){return p.x>=mx&&p.y>=my;}).sort(function(a,b){return b.tot-a.tot;});
+  var rows = (primary.length?primary:pts.sort(function(a,b){return b.tot-a.tot;}).slice(0,4)).map(function(p){
+    var st=RCA_STYLE[p.g]||RCA_STYLE['Lainnya'];
+    return '<tr class="clickable" onclick="showList(\''+p.lk+'\')" title="Klik untuk daftar tiket">'+
+      '<td>'+st.i+' '+p.g+'</td><td class="num">'+p.x+'</td><td class="num">'+fmt1(p.y)+'</td><td class="num">'+fmt1(p.tot)+'</td></tr>';
+  }).join('');
+  document.getElementById('tblQuad').innerHTML =
+    '<thead><tr><th>Kelompok RCA</th><th class="num">Tiket</th><th class="num">Avg TTR</th><th class="num">Total Jam</th></tr></thead><tbody>'+rows+'</tbody>';
+  document.getElementById('insQuad').innerHTML = primary.length
+    ? '💡 <b>'+primary[0].g+'</b> ada di kuadran PRIMARY: <b>'+primary[0].x+' tiket</b> dengan rata-rata TTR <b>'+
+      fmt1(primary[0].y)+' jam</b> — kontributor terbesar jam gangguan ('+fmt1(primary[0].tot)+' jam). Prioritaskan program preventif untuk RCA ini.'
+    : '💡 Tidak ada RCA di kuadran PRIMARY pada periode/filter ini.';
+}
+
+/* ---- 4. Operator ---- */
+function renderOperator(data){
+  var ops = uniqSorted(data.map(function(t){return t.op;}));
+  var ds = SLA_CAT.map(function(c){
+    return { label:c.label, backgroundColor:c.color, borderRadius:4,
+      data: ops.map(function(op){ return data.filter(function(t){return t.op===op&&isPerf(t)&&slaCat(t.ttr)===c.k;}).length; }) };
+  });
+  mk('chOpSla',{ type:'bar', data:{labels:ops,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,title:{display:true,text:'Jumlah tiket'}}}}});
+
+  var rows = ops.map(function(op){
+    var set=data.filter(function(t){return t.op===op;});
+    var perf=set.filter(isPerf);
+    var inn=perf.filter(function(t){return slaCat(t.ttr)==='in';}).length;
+    var high=perf.filter(function(t){return slaCat(t.ttr)==='high';}).length;
+    var cancN=set.filter(isCancel).length;
+    var slaPct = perf.length? inn/perf.length*100:null;
+    var slaCls = slaPct==null?'grey':(slaPct>=95?'ok':(slaPct>=85?'warn':'bad'));
+    var pfx=op+' (terfilter) — ';
+    return '<tr><td><b>'+op+'</b></td>'+
+      '<td class="num">'+drill(set,pfx+'Semua Tiket',set.length)+'</td>'+
+      '<td class="num">'+drill(perf,pfx+'Tiket Performansi (MTTR)',fmt1(avg(perf,function(t){return t.ttr;})))+'</td>'+
+      '<td class="num"><span class="pill '+slaCls+'">'+drill(perf.filter(function(t){return slaCat(t.ttr)==='in';}),pfx+'In SLA ≤4 Jam',(slaPct==null?'–':fmt1(slaPct)+'%'))+'</span></td>'+
+      '<td class="num">'+drill(perf.filter(function(t){return slaCat(t.ttr)==='high';}),pfx+'>8 Jam',high)+' <span style="color:var(--grey);font-size:11px">('+pct(high,perf.length)+')</span></td>'+
+      '<td class="num">'+drill(set.filter(isCancel),pfx+'Cancel',cancN)+' <span style="color:var(--grey);font-size:11px">('+pct(cancN,set.length)+')</span></td>'+
+      '<td class="num">'+fmt1(avg(perf,function(t){return t.tv;}))+'</td></tr>';
+  }).join('');
+  document.getElementById('tblOpAll').innerHTML =
+    '<thead><tr><th>Operator</th><th class="num">Tiket</th><th class="num">MTTR NET</th><th class="num">% In SLA</th>'+
+    '<th class="num">&gt;8 Jam</th><th class="num">Cancel</th><th class="num">Avg Travel (jam)</th></tr></thead><tbody>'+rows+'</tbody>';
+}
+
+/* ---- 5. Segment ---- */
+function renderSegment(data){
+  var perf = data.filter(isPerf);
+  var byS = groupBy(perf, function(t){return t.seg||'(Tanpa Segment)';});
+  var segs = Object.keys(byS).sort(function(a,b){return (avg(byS[b],function(t){return t.ttr;})||0)-(avg(byS[a],function(t){return t.ttr;})||0);});
+  mk('chSeg',{ data:{labels:segs, datasets:[
+      { label:'Rata-rata TTR NET (jam)', type:'bar',
+        data:segs.map(function(s){return avg(byS[s],function(t){return t.ttr;});}),
+        backgroundColor:'#ef4444CC', borderRadius:5, yAxisID:'y' },
+      { label:'Jumlah tiket', type:'line',
+        data:segs.map(function(s){return byS[s].length;}),
+        borderColor:'#f8fafc', backgroundColor:'#f8fafc', pointRadius:4, borderWidth:2, tension:.3, yAxisID:'y2' }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+      scales:{y:{title:{display:true,text:'Jam'}},y2:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'Tiket'}}}}});
+
+  var ds = SLA_CAT.map(function(c){
+    return { label:c.label, backgroundColor:c.color, borderRadius:4,
+      data: segs.map(function(s){ return byS[s].filter(function(t){return slaCat(t.ttr)===c.k;}).length; }) };
+  });
+  var segTotals = segs.map(function(s){ return byS[s].length; });
+  mk('chSegSla',{ type:'bar', data:{labels:segs,datasets:ds},
+    plugins:[ChartDataLabels],
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{
+          color:'#fff', font:{weight:'bold',size:10},
+          formatter:function(v,ctx){
+            var tot=segTotals[ctx.dataIndex]||0;
+            if(!v||!tot) return '';
+            var p=v/tot*100;
+            return p<6 ? '' : Math.round(p)+'%';
+          }
+        }},
+      scales:{x:{stacked:true,title:{display:true,text:'Jumlah tiket'}},y:{stacked:true}}}});
+
+  // insight otomatis: kenapa TTR lama
+  var worst = segs[0];
+  var html='';
+  if(worst){
+    var arr=byS[worst];
+    var aTr=avg(arr,function(t){return t.tr;})||0, aTv=avg(arr,function(t){return t.tv;})||0, aTp=avg(arr,function(t){return t.tp;})||0;
+    var tot=aTr+aTv+aTp||1;
+    var phases=[['Time Respons',aTr],['Travel Time',aTv],['Time Progress',aTp]].sort(function(a,b){return b[1]-a[1];});
+    var byR=groupBy(arr,rcaGroup);
+    var topR=Object.keys(byR).sort(function(a,b){return byR[b].length-byR[a].length;})[0];
+    html='💡 Segment dengan TTR terlama: <b>'+worst+'</b> (rata-rata <b>'+fmt1(avg(arr,function(t){return t.ttr;}))+
+      ' jam</b>, '+arr.length+' tiket). Fase dominan: <b>'+phases[0][0]+'</b> ('+fmt1(phases[0][1])+' jam ≈ '+
+      Math.round(phases[0][1]/tot*100)+'% dari siklus) — RCA terbanyak: <b>'+topR+'</b>. '+
+      (phases[0][0]==='Travel Time' ? 'TTR lama terutama karena jarak/akses ke lokasi — pertimbangkan penempatan tim standby / sebaran material di STO terdekat.'
+       : phases[0][0]==='Time Progress' ? 'TTR lama terutama pada eksekusi perbaikan — cek ketersediaan material (closure/kabel) dan kompetensi penyambungan.'
+       : 'TTR lama sejak respons awal — perketat SOP dispatch dan monitoring tiket masuk.');
+  }
+  document.getElementById('insSeg').innerHTML=html||'—';
+}
+
+/* ---- 8. Fase waktu per RCA ---- */
+function renderPhase(data){
+  var perf=data.filter(isPerf);
+  var byR=groupBy(perf,rcaGroup);
+  var gs=Object.keys(byR).sort(function(a,b){
+    return ((avg(byR[b],function(t){return t.tr;})||0)+(avg(byR[b],function(t){return t.tv;})||0)+(avg(byR[b],function(t){return t.tp;})||0))
+         - ((avg(byR[a],function(t){return t.tr;})||0)+(avg(byR[a],function(t){return t.tv;})||0)+(avg(byR[a],function(t){return t.tp;})||0)); });
+  function dsOf(label,fn,color){ return {label:label,data:gs.map(function(g){return avg(byR[g],fn);}),backgroundColor:color,borderRadius:3,stack:'p'}; }
+  mk('chPhase',{ type:'bar',
+    data:{labels:gs, datasets:[
+      dsOf('Time Respons',function(t){return t.tr;},'#6366f1'),
+      dsOf('Travel Time',function(t){return t.tv;},'#f59e0b'),
+      dsOf('Time Progress',function(t){return t.tp;},'#ef4444')]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+      scales:{x:{stacked:true,title:{display:true,text:'Rata-rata jam'}},y:{stacked:true,ticks:{font:{size:10}}}}}});
+
+  var rows='', worstG=null, worstShare=0, worstPhase='';
+  gs.forEach(function(g){
+    var arr=byR[g];
+    var aTr=avg(arr,function(t){return t.tr;})||0, aTv=avg(arr,function(t){return t.tv;})||0, aTp=avg(arr,function(t){return t.tp;})||0;
+    var tot=aTr+aTv+aTp;
+    var ph=[['Respons',aTr],['Travel',aTv],['Progress',aTp]].sort(function(a,b){return b[1]-a[1];})[0];
+    var share = tot>0? ph[1]/tot : 0;
+    if(tot>0 && ph[1]>worstShare){ worstShare=ph[1]; worstG=g; worstPhase=ph[0]; }
+    var st=RCA_STYLE[g]||RCA_STYLE['Lainnya'];
+    rows+='<tr class="clickable" onclick="showList(\''+regList('RCA: '+g,arr)+'\')" title="Klik untuk daftar tiket">'+
+      '<td>'+st.i+' '+g+'</td><td class="num">'+arr.length+'</td><td class="num">'+fmt1(tot)+'</td>'+
+      '<td><span class="pill '+(ph[0]==='Travel'?'warn':(ph[0]==='Progress'?'bad':'grey'))+'">'+ph[0]+' '+Math.round(share*100)+'%</span></td></tr>';
+  });
+  document.getElementById('tblPhase').innerHTML =
+    '<thead><tr><th>Kelompok RCA</th><th class="num">Tiket</th><th class="num">Total Avg Jam</th><th>Fase Dominan</th></tr></thead><tbody>'+rows+'</tbody>';
+  document.getElementById('insPhase').innerHTML = worstG
+    ? '💡 Kontributor over time terbesar: <b>'+worstG+'</b> dengan fase <b>'+worstPhase+'</b> rata-rata <b>'+fmt1(worstShare)+
+      ' jam</b>. '+(worstPhase==='Travel'?'Fokus: reposisi tim/posko mendekati span rawan.':worstPhase==='Progress'?'Fokus: kesiapan material & metode penyambungan.':'Fokus: kecepatan dispatch tiket.')
+    : '—';
+}
+
+/* ---- 9. SLA ---- */
+function renderSla(data){
+  var perf=data.filter(isPerf);
+  var counts=SLA_CAT.map(function(c){return perf.filter(function(t){return slaCat(t.ttr)===c.k;}).length;});
+  mk('chSla',{ type:'doughnut',
+    data:{labels:SLA_CAT.map(function(c){return c.label;}),
+      datasets:[{data:counts,backgroundColor:SLA_CAT.map(function(c){return c.color;}),borderWidth:2,borderColor:'#132042'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw+' tiket ('+pct(c.raw,perf.length)+')';}}}}}});
+
+  var witels=uniqSorted(data.map(function(t){return t.witel;}));
+  var ds=SLA_CAT.map(function(c){
+    return {label:c.label,backgroundColor:c.color,borderRadius:4,
+      data:witels.map(function(w){return perf.filter(function(t){return t.witel===w&&slaCat(t.ttr)===c.k;}).length;})};
+  });
+  mk('chSlaWitel',{ type:'bar', data:{labels:witels.map(function(w){return 'Witel '+w;}),datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,title:{display:true,text:'Jumlah tiket'}}}}});
+}
+
+/* ---- 7a. Peta seluruh tiket + rekomendasi ---- */
+var RCA_RECO = {
+  'Tertabrak Kendaraan':'perambuan & penataan ketinggian kabel udara di crossing jalan, relokasi span rawan lalu lintas berat',
+  'Tersayat Benda Tajam':'patroli rutin jalur, koordinasi dengan aktivitas galian/konstruksi di sepanjang rute',
+  'Vandalisme':'patroli bersama aparat/warga & pengamanan jalur rawan, penandaan kabel milik Telkom Akses',
+  'Gigitan Binatang':'penggantian dengan kabel proteksi rodent-resistant pada span yang berulang',
+  'Terbakar':'sosialisasi warga & penertiban pembakaran sampah/lahan di bawah jalur kabel',
+  'Tertimpa Pohon':'program rabas-rabas (tree trimming) berkala bersama pemda/PLN',
+  'Pihak ke-3':'penguatan koordinasi perizinan dengan PU/pemda & monitoring proyek pihak ketiga',
+  'Repair Closure':'audit kualitas closure & program permanenisasi sambungan temporer',
+  'RK/ODC Plug-Unplug':'pengetatan akses & ceklis mutasi core di RK/ODC',
+  'Ukur Normal / Non-Fisik':'perkuat validasi remote (RSL/alarm) sebelum dispatch teknisi',
+  'Tanpa RCA / Non-Teknis':'disiplinkan pengisian RCA oleh teknisi agar analisa akurat',
+  'Lainnya':'review kasus per kasus pada laporan gangguan'
+};
+
+function mkRcaLegend(m){
+  var legend=L.control({position:'bottomleft'});
+  legend.onAdd=function(){
+    var div=L.DomUtil.create('div','legend');
+    div.innerHTML='<b>Kelompok RCA</b><br>'+Object.keys(RCA_STYLE).map(function(g){
+      return '<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:'+RCA_STYLE[g].c+';margin-right:6px"></span>'+RCA_STYLE[g].i+' '+g;
+    }).join('<br>');
+    return div;
+  };
+  legend.addTo(m);
+}
+
+function addTicketMarkers(layer, pts, bounds){
+  pts.forEach(function(t){
+    var g=rcaGroup(t), st=RCA_STYLE[g]||RCA_STYLE['Lainnya'];
+    var icon=L.divIcon({className:'', html:'<div class="mk" style="background:'+st.c+'"><span>'+st.i+'</span></div>',
+      iconSize:[30,30], iconAnchor:[15,30], popupAnchor:[0,-30]});
+    var mrk=L.marker([t.lat,t.lng],{icon:icon, title:(t.tt||'')+' · TTR '+fmt1(t.ttr)+' jam'});
+    mrk.on('click', function(){ showTicketT(t); });
+    mrk.addTo(layer);
+    bounds.push([t.lat,t.lng]);
+  });
+}
+
+/* Filter centang RCA & layer patroli untuk peta sebaran */
+var MAP_RCA_OFF={}, SHOW_PATROL=true, patrolLayer=null;
+
+function toggleRcaChip(g){
+  MAP_RCA_OFF[g]=!MAP_RCA_OFF[g];
+  renderMapAll(LAST_DATA);
+}
+function togglePatrol(){ SHOW_PATROL=!SHOW_PATROL; renderMapAll(LAST_DATA); }
+
+function renderRcaChips(groups){
+  var el=document.getElementById('rcaChips');
+  var html='<span class="ttl">Centang RCA:</span>'+groups.map(function(g){
+    var st=RCA_STYLE[g]||RCA_STYLE['Lainnya'];
+    var off=MAP_RCA_OFF[g]?' off':'';
+    return '<label class="rchip'+off+'" style="border-color:'+st.c+';color:'+st.c+'" onclick="event.preventDefault();toggleRcaChip(\''+g.replace(/'/g,"\\'")+'\')">'+
+      '<input type="checkbox"'+(MAP_RCA_OFF[g]?'':' checked')+'>'+(MAP_RCA_OFF[g]?'☐':'☑')+' '+st.i+' '+g+'</label>';
+  }).join('');
+  html+='<label class="rchip'+(SHOW_PATROL?'':' off')+'" style="border-color:#ef4444;color:#ef4444;margin-left:8px" onclick="event.preventDefault();togglePatrol()">'+
+    (SHOW_PATROL?'☑':'☐')+' 🚩 Zona Patroli</label>';
+  el.innerHTML=html;
+}
+
+/* Convex hull (monotone chain) utk polygon zona patroli */
+function convexHull(pts){
+  var p=pts.slice().sort(function(a,b){return a[0]-b[0]||a[1]-b[1];});
+  if(p.length<3) return p;
+  function cross(o,a,b){return (a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);}
+  var lo=[],up=[];
+  p.forEach(function(pt){ while(lo.length>=2&&cross(lo[lo.length-2],lo[lo.length-1],pt)<=0)lo.pop(); lo.push(pt); });
+  p.reverse().forEach(function(pt){ while(up.length>=2&&cross(up[up.length-2],up[up.length-1],pt)<=0)up.pop(); up.push(pt); });
+  lo.pop(); up.pop();
+  return lo.concat(up);
+}
+/* Zona klaster: grid ~10 km, minimal 3 tiket */
+function patrolZones(pts){
+  var cells={};
+  pts.forEach(function(t){
+    var k=Math.round(t.lat/0.09)+'_'+Math.round(t.lng/0.09);
+    (cells[k]=cells[k]||[]).push(t);
+  });
+  return Object.keys(cells).filter(function(k){return cells[k].length>=3;}).map(function(k){
+    var arr=cells[k];
+    var byG=groupBy(arr,rcaGroup);
+    var domG=Object.keys(byG).sort(function(a,b){return byG[b].length-byG[a].length;})[0];
+    var cy=avg(arr,function(t){return t.lat;}), cx=avg(arr,function(t){return t.lng;});
+    // hull + pelebaran 30% dari centroid (min 0.02°) agar polygon jelas
+    var hull=convexHull(arr.map(function(t){return [t.lat,t.lng];}));
+    var poly=hull.map(function(p){
+      var dy=p[0]-cy, dx=p[1]-cx;
+      var fy=dy*1.3, fx=dx*1.3;
+      if(Math.abs(fy)<0.02) fy=(fy<0?-1:1)*0.02;
+      if(Math.abs(fx)<0.02) fx=(fx<0?-1:1)*0.02;
+      return [cy+fy, cx+fx];
+    });
+    return { tickets:arr, n:arr.length, dom:domG, lat:cy, lng:cx, poly:poly,
+      witel:arr[0].witel, site:(arr[0].site||'').substring(0,38) };
+  }).sort(function(a,b){return b.n-a.n;});
+}
+
+function renderMapAll(data){
+  var all = data.filter(function(t){ return t.lat!=null && t.lng!=null; });
+  var groups = uniqSorted(all.map(rcaGroup));
+  renderRcaChips(groups);
+  var pts = all.filter(function(t){ return !MAP_RCA_OFF[rcaGroup(t)]; });
+  document.getElementById('mapAllInfo').textContent =
+    pts.length+' dari '+all.length+' tiket berkoordinat ditampilkan (sesuai centang RCA). Klik ikon untuk detail tiket; area merah putus-putus = zona rekomendasi patroli.';
+  if(!mapAll){
+    mapAll=L.map('mapAll').setView([0.5,101.4],7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(mapAll);
+    mkRcaLegend(mapAll);
+  }
+  if(mapAllLayer){ mapAll.removeLayer(mapAllLayer); }
+  if(patrolLayer){ mapAll.removeLayer(patrolLayer); patrolLayer=null; }
+  mapAllLayer=L.layerGroup(); BND2=[];
+  addTicketMarkers(mapAllLayer, pts, BND2);
+  mapAllLayer.addTo(mapAll);
+
+  // Zona patroli (polygon)
+  var zones = patrolZones(pts);
+  if(SHOW_PATROL && zones.length){
+    patrolLayer=L.layerGroup();
+    zones.forEach(function(z,i){
+      var lk=regList('Zona Patroli #'+(i+1)+' — '+z.witel, z.tickets);
+      var shape = z.poly.length>=3
+        ? L.polygon(z.poly,{color:'#ef4444',weight:2.5,dashArray:'8 6',fillColor:'#ef4444',fillOpacity:.13})
+        : L.circle([z.lat,z.lng],{radius:3500,color:'#ef4444',weight:2.5,dashArray:'8 6',fillColor:'#ef4444',fillOpacity:.13});
+      shape.bindTooltip('🚩 Zona Patroli #'+(i+1)+': '+z.n+' tiket · dominan '+z.dom,{sticky:true});
+      shape.on('click',function(){ showList(lk); });
+      shape.addTo(patrolLayer);
+    });
+    patrolLayer.addTo(mapAll);
+  }
+  if(BND2.length && document.getElementById('mapAll').offsetParent){
+    mapAll.invalidateSize(); mapAll.fitBounds(BND2,{padding:[35,35],maxZoom:11});
+  }
+
+  // Analisa & rekomendasi otomatis
+  var perf=data.filter(function(t){return !isCancel(t);});
+  var byR=groupBy(perf,rcaGroup);
+  var tops=Object.keys(byR).sort(function(a,b){return byR[b].length-byR[a].length;}).slice(0,2);
+  var byW=groupBy(perf,function(t){return t.witel;});
+  var witelTop=Object.keys(byW).map(function(w){
+    var g=groupBy(byW[w],rcaGroup);
+    var t=Object.keys(g).sort(function(a,b){return g[b].length-g[a].length;})[0];
+    return '<b>'+w+'</b>: dominan '+(RCA_STYLE[t]?RCA_STYLE[t].i+' ':'')+t+' ('+g[t].length+' tiket)';
+  }).join(' · ');
+  var recoHtml = tops.map(function(g,i){
+    var share=pct(byR[g].length,perf.length);
+    return '<b>'+(i+1)+'. '+(RCA_STYLE[g]?RCA_STYLE[g].i+' ':'')+g+'</b> ('+byR[g].length+' tiket, '+share+
+      ') → rekomendasi: '+(RCA_RECO[g]||RCA_RECO['Lainnya'])+'.';
+  }).join('<br>');
+  var zoneHtml = zones.slice(0,5).map(function(z,i){
+    return '<b>Zona #'+(i+1)+'</b> ('+z.witel+(z.site?', sekitar '+z.site:'')+'): '+z.n+' tiket, dominan '+
+      (RCA_STYLE[z.dom]?RCA_STYLE[z.dom].i+' ':'')+z.dom;
+  }).join('<br>');
+  document.getElementById('insMapAll').innerHTML = all.length
+    ? '💡 <b>Analisa sebaran:</b> '+witelTop+'.<br><br><b>Rekomendasi prioritas per RCA:</b><br>'+recoHtml+
+      (zones.length? '<br><br><b>🚩 Jalur yang direkomendasikan untuk patroli rutin</b> (klaster ≥3 tiket, ditandai polygon merah di peta):<br>'+zoneHtml+
+        '<br><br>Zona-zona ini adalah <b>jalur rawan berulang</b> — jadwalkan patroli rutin, dan untuk klaster terpadat usulkan proteksi permanen (rerouting/tanam kabel/perambuan).'
+        : '<br><br>Tidak ada klaster ≥3 tiket untuk zona patroli pada filter ini.')
+    : '💡 Tidak ada tiket dengan koordinat valid pada filter ini.';
+}
+
+/* ---- 7b. Peta TTR > 4 jam ---- */
+function renderMap(data){
+  var pts = data.filter(function(t){ return !isCancel(t) && t.ttr!=null && t.ttr>4 && t.lat!=null && t.lng!=null; });
+  document.getElementById('mapInfo').textContent =
+    pts.length+' tiket TTR NET > 4 jam dengan koordinat valid ditampilkan. Klik marker untuk detail tiket.';
+  if(!map){
+    map=L.map('map').setView([0.5,101.4],7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
+    mkRcaLegend(map);
+  }
+  if(mapLayer){ map.removeLayer(mapLayer); }
+  mapLayer=L.layerGroup(); BND1=[];
+  addTicketMarkers(mapLayer, pts, BND1);
+  mapLayer.addTo(map);
+  if(BND1.length && document.getElementById('map').offsetParent){
+    map.invalidateSize(); map.fitBounds(BND1,{padding:[35,35],maxZoom:11});
+  }
+}
+
+/* ---- 6. Cancel ---- */
+function renderCancel(data){
+  var canc=data.filter(isCancel);
+  document.getElementById('cancelCount').textContent=canc.length+' tiket';
+  CANC=canc.slice().sort(function(a,b){return (b.open||'').localeCompare(a.open||'');});
+  var rows=CANC.map(function(t,i){
+    return '<tr class="clickable" onclick="showTicketT(CANC['+i+'])" title="Klik untuk detail tiket">'+
+      '<td>'+(t.tt||'-')+'</td><td>'+monLabel(t.bulan)+'</td><td>'+t.witel+'</td><td>'+t.op+'</td><td>'+(t.ket||t.jenis||'-')+'</td></tr>';
+  }).join('');
+  document.getElementById('tblCancel').innerHTML =
+    '<thead><tr><th>Nomor TT</th><th>Bulan</th><th>Witel</th><th>Operator</th><th>Keterangan</th></tr></thead><tbody>'+
+    (rows||'<tr><td colspan="5" style="text-align:center;color:var(--grey)">Tidak ada tiket cancel pada filter ini</td></tr>')+'</tbody>';
+
+  var share = data.length? Math.round(canc.length/data.length*1000)/10 : 0;
+  document.getElementById('recoCancel').innerHTML =
+    '<b>📌 Usulan & Need Support</b><br><br>'+
+    'Terdapat <b>'+canc.length+' tiket cancel ('+share+'%</b> dari total tiket terfilter). Tiket cancel umumnya terbukti bukan gangguan fisik '+
+    'di sisi Telkom Akses (RSL normal / alarm pulih sendiri / duplikasi tiket), namun tetap membebani performansi dan memaksa teknisi bergerak ke lokasi.<br><br>'+
+    '<b>1. Kebijakan performansi:</b> tiket cancel <u>dikeluarkan dari perhitungan KPI/TTR</u> ke depan (dashboard ini sudah menerapkannya).<br>'+
+    '<b>2. Efektivitas teknisi:</b> wajib <u>validasi remote</u> (cek RSL, alarm, dan pengukuran dari NOC/OWS) sebelum dispatch — teknisi tidak perlu ke lokasi bila indikasi non-fisik.<br>'+
+    '<b>3. Proses dengan MTEL:</b> sepakati SLA verifikasi awal maksimal 30 menit dan mekanisme cancel cepat via sistem, sehingga resource teknisi fokus ke gangguan riil.';
+}
+
+/* ---- 10. Teknisi ---- */
+function renderTech(data){
+  var perf=data.filter(function(t){return isPerf(t)&&t.tek;});
+  var byT=groupBy(perf,function(t){return t.tek;});
+  var stats=Object.keys(byT).map(function(n){
+    var arr=byT[n];
+    var inn=arr.filter(function(t){return slaCat(t.ttr)==='in';}).length;
+    return {n:n, c:arr.length, mttr:avg(arr,function(t){return t.ttr;}), sla:inn/arr.length*100,
+      witel:arr[0].witel};
+  }).filter(function(s){return s.c>=3;});
+
+  var top=stats.slice().sort(function(a,b){return a.mttr-b.mttr;}).slice(0,5);
+  var bottom=stats.slice().sort(function(a,b){return b.mttr-a.mttr;}).slice(0,5);
+  var medals=['🥇','🥈','🥉','4','5'];
+
+  function tbl(list, medal){
+    var head='<thead><tr><th>#</th><th>Teknisi</th><th>Witel</th><th class="num">Tiket</th><th class="num">Avg TTR NET</th><th class="num">% In SLA</th></tr></thead>';
+    var body=list.map(function(s,i){
+      var cls=s.sla>=95?'ok':(s.sla>=85?'warn':'bad');
+      return '<tr><td class="medal">'+(medal?medals[i]:(i+1))+'</td><td><b>'+s.n+'</b></td><td>'+s.witel+'</td>'+
+        '<td class="num">'+s.c+'</td><td class="num">'+fmt1(s.mttr)+' jam</td>'+
+        '<td class="num"><span class="pill '+cls+'">'+fmt1(s.sla)+'%</span></td></tr>';
+    }).join('');
+    return head+'<tbody>'+(body||'<tr><td colspan="6" style="text-align:center;color:var(--grey)">Belum ada teknisi dengan ≥3 tiket</td></tr>')+'</tbody>';
+  }
+  document.getElementById('tblTop').innerHTML=tbl(top,true);
+  document.getElementById('tblBottom').innerHTML=tbl(bottom,false);
+}
+
+/* ================= INIT ================= */
+window.addEventListener('load', loadData);
+</script>
+</body>
+</html>

@@ -1,0 +1,2628 @@
+<!doctype html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Revenue, COGS & GPM</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+	    :root {
+	      --bg: #0b1329;
+	      --top: #070d1e;
+	      --panel: #132042;
+	      --panel-2: #132042;
+	      --line: rgba(255, 255, 255, 0.08);
+	      --gold: #6366f1;
+	      --gold-2: #4f46e5;
+	      --cream: #f8fafc;
+	      --muted: #94a3b8;
+	      --text: #f8fafc;
+	      --green: #10b981;
+	      --red: #ef4444;
+	      --blue: #3b82f6;
+	      --tan: #ec4899;
+	      --cyan: #06b6d4;
+	      --ink: #f8fafc;
+	      --shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+	    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+	    body {
+      margin: 0;
+      min-height: 100vh;
+	      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+    }
+
+    button,
+    select {
+      font: inherit;
+    }
+
+	    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 14px 24px;
+	      background: rgba(11, 19, 41, 0.85);
+	      border-bottom: 3px solid var(--gold);
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+	    .logo {
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+	      background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(99, 102, 241, 0.12) 100%);
+	      color: var(--ink);
+	      font-size: 26px;
+	      box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .08), 0 0 25px rgba(99, 102, 241, .25);
+    }
+
+    h1 {
+      margin: 0;
+	      color: #f8fafc;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+	    .top-meta {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+	      color: rgba(255, 255, 255, .72);
+      font-size: 13px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .top-time {
+	      color: #6366f1;
+      font-weight: 800;
+    }
+
+    .refresh {
+      width: auto;
+      min-width: 112px;
+      height: 38px;
+      border: 2px solid var(--gold);
+      border-radius: 8px;
+	      color: #6366f1;
+	      background: rgba(99, 102, 241, .15);
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .sheet-strip {
+      display: flex;
+      gap: 18px;
+      overflow-x: auto;
+      padding: 8px 24px;
+	      color: #94a3b8;
+	      background: #070d1e;
+	      border-bottom: 1px solid rgba(255, 255, 255, .08);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .sheet-strip b {
+      color: var(--gold);
+    }
+
+    .app {
+      padding: 18px 24px 34px;
+    }
+
+	    .filter-panel,
+	    .card,
+	    .chart-panel,
+	    .table-panel {
+	      background: var(--panel-2);
+	      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .filter-panel {
+      padding: 14px 18px;
+      margin-bottom: 18px;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(180px, 1fr)) auto;
+      gap: 16px;
+      align-items: end;
+    }
+
+	    .filter-title {
+      margin: 0 0 8px;
+	      color: var(--ink);
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    .multi-select {
+      position: relative;
+    }
+
+	    .multi-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      min-height: 42px;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+	      background: rgba(26, 40, 78, 0.9);
+	      color: var(--text);
+      cursor: pointer;
+    }
+
+    .multi-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .multi-count {
+      flex: 0 0 auto;
+	      color: var(--blue);
+      font-size: 11px;
+      font-weight: 950;
+    }
+
+    .multi-menu {
+      position: absolute;
+      z-index: 20;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      display: none;
+      max-height: 290px;
+      overflow: auto;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+	      background: #132042;
+      box-shadow: var(--shadow);
+    }
+
+    .multi-select.open .multi-menu {
+      display: block;
+    }
+
+    .multi-option {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 34px;
+      padding: 7px 8px;
+      border-radius: 8px;
+	      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .multi-option:hover {
+	      background: rgba(6, 182, 212, .10);
+    }
+
+    .multi-option input {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--gold);
+    }
+
+    .tabs {
+      display: inline-flex;
+      gap: 6px;
+      padding: 6px;
+      margin-bottom: 20px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(18, 28, 56, 0.65);
+    }
+
+    .tab-btn {
+      min-height: 34px;
+      padding: 8px 14px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 3px 8px rgba(99, 102, 241, 0.25);
+    }
+
+    .tab-view.hidden {
+      display: none;
+    }
+
+    .recon-kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .recon-card {
+      padding: 16px;
+      min-height: 112px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+	      background: var(--panel-2);
+      box-shadow: var(--shadow);
+    }
+
+    .recon-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .recon-value {
+      margin-top: 6px;
+      color: var(--gold);
+      font-size: 24px;
+      font-weight: 950;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 86px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .status-badge.matched {
+	      color: #f8fafc;
+      background: var(--green);
+    }
+
+    .status-badge.comm {
+	      color: var(--ink);
+      background: var(--gold);
+    }
+
+    .status-badge.mitra {
+	      color: #f8fafc;
+      background: var(--blue);
+    }
+
+    .recon-table td,
+    .recon-table th {
+      min-width: 132px;
+      vertical-align: top;
+    }
+
+    .recon-table td:nth-child(2),
+    .recon-table th:nth-child(2) {
+      min-width: 190px;
+    }
+
+	    .recon-branch-row td {
+	      padding: 0;
+	    }
+
+	    .recon-branch {
+	      padding: 16px;
+	    }
+
+	    .recon-branch summary {
+	      cursor: pointer;
+	      list-style-position: inside;
+	    }
+
+	    .recon-branch-title {
+	      display: flex;
+	      flex-wrap: wrap;
+	      align-items: center;
+	      justify-content: space-between;
+	      gap: 12px;
+	      color: var(--ink);
+	      font-weight: 1000;
+	      font-size: 16px;
+	    }
+
+	    .recon-branch-metrics {
+	      display: flex;
+	      flex-wrap: wrap;
+	      gap: 8px;
+	      color: var(--muted);
+	      font-size: 12px;
+	      font-weight: 900;
+	    }
+
+	    .recon-status-groups {
+	      display: grid;
+	      gap: 10px;
+	      margin-top: 12px;
+	    }
+
+	    .recon-status-group {
+	      padding: 10px 12px;
+	      background: rgba(255, 255, 255, 0.04);
+	      border: 1px solid var(--line);
+	      border-radius: 12px;
+	    }
+
+	    .recon-status-title {
+	      display: flex;
+	      flex-wrap: wrap;
+	      align-items: center;
+	      justify-content: space-between;
+	      gap: 10px;
+	      font-weight: 1000;
+	    }
+
+	    .recon-work-list {
+	      display: grid;
+	      gap: 8px;
+	      margin-top: 10px;
+	    }
+
+	    .recon-work-item {
+	      display: grid;
+	      grid-template-columns: minmax(240px, 1.5fr) repeat(5, minmax(110px, 1fr));
+	      gap: 10px;
+	      align-items: start;
+	      padding: 10px;
+	      background: rgba(26, 40, 78, 0.9);
+	      border: 1px solid var(--line);
+	      border-radius: 8px;
+	    }
+
+	    .recon-work-item b {
+	      display: block;
+	      color: var(--ink);
+	    }
+
+	    .recon-work-label {
+	      color: var(--muted);
+	      font-size: 10px;
+	      font-weight: 1000;
+	      letter-spacing: .04em;
+	      text-transform: uppercase;
+	    }
+
+	    .recon-work-value {
+	      margin-top: 3px;
+	      font-size: 12px;
+	      font-weight: 900;
+	    }
+
+	    .recon-muted {
+	      color: var(--muted);
+	      font-size: 11px;
+	      line-height: 1.35;
+	    }
+
+	    .recon-detail-box {
+	      display: grid;
+	      gap: 10px;
+	      min-width: 320px;
+	      margin-top: 8px;
+	      padding: 10px;
+	      background: rgba(26, 40, 78, 0.9);
+	      border: 1px solid var(--line);
+	      border-radius: 8px;
+	      white-space: normal;
+	    }
+
+	    .branch-details summary {
+	      margin-top: 4px;
+	      color: var(--blue);
+	      font-size: 11px;
+	      font-weight: 900;
+	      cursor: pointer;
+	    }
+
+	    .recon-detail-box h4 {
+	      margin: 0 0 6px;
+	      color: var(--ink);
+	      font-size: 12px;
+	      text-transform: uppercase;
+	    }
+
+	    .recon-detail-box p {
+	      margin: 4px 0;
+	      color: var(--muted);
+	      line-height: 1.35;
+	    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .action-btn {
+      width: auto;
+      min-width: 86px;
+      height: 36px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+	      background: rgba(26, 40, 78, 0.9);
+      color: var(--muted);
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .action-btn.primary {
+	      background: var(--gold);
+	      color: var(--ink);
+      border-color: var(--gold);
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+	    .card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 20px;
+      min-height: 172px;
+	      border-top: 3px solid var(--gold);
+    }
+
+    .card.red {
+	      border-top-color: var(--red);
+    }
+
+    .card.green {
+	      border-top-color: var(--green);
+    }
+
+    .card.tan {
+	      border-top-color: var(--tan);
+    }
+
+    .card.orange {
+	      border-top-color: #f59e0b;
+    }
+
+    .card.blue {
+	      border-top-color: var(--blue);
+    }
+
+    .kpi-icon {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      margin-bottom: 14px;
+      border-radius: 8px;
+      background: rgba(99, 102, 241, .15);
+      font-size: 19px;
+    }
+
+    .kpi-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    .kpi-value {
+      margin-top: 7px;
+      color: var(--gold);
+      font-size: clamp(22px, 1.8vw, 28px);
+      line-height: 1.15;
+      font-weight: 950;
+      overflow-wrap: anywhere;
+    }
+
+    .kpi-value.red-text {
+	      color: var(--red);
+    }
+
+    .kpi-value.green-text {
+      color: var(--green);
+    }
+
+    .kpi-value.blue-text {
+      color: var(--blue);
+    }
+
+    .kpi-note {
+      margin-top: auto;
+      padding-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .section-title {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      margin: 10px 0 12px;
+      font-size: 19px;
+      font-weight: 950;
+    }
+
+    .section-title small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .portfolio-card {
+      position: relative;
+      padding: 18px 20px;
+      min-height: 310px;
+      overflow: hidden;
+    }
+
+    .cogs-analysis-table {
+      margin-top: 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    .cogs-analysis-table .table-wrap {
+      max-height: 360px;
+    }
+
+    .cogs-analysis-table table {
+      min-width: 1320px;
+    }
+
+    .rank-badge {
+      display: inline-grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      color: var(--ink);
+      background: rgba(99, 102, 241, .15);
+      font-size: 11px;
+      font-weight: 950;
+    }
+
+    .portfolio-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: var(--gold);
+    }
+
+    .portfolio-card.good::before {
+      background: var(--green);
+    }
+
+    .portfolio-card.bad::before {
+      background: var(--red);
+    }
+
+    .portfolio-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      font-weight: 950;
+      font-size: 16px;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 8px;
+      border-radius: 3px;
+      background: var(--gold);
+    }
+
+	    .badge {
+	      padding: 5px 10px;
+	      border-radius: 999px;
+	      color: var(--muted);
+	      background: rgba(148, 163, 184, .15);
+	      font-size: 11px;
+	      font-weight: 900;
+	      white-space: nowrap;
+	    }
+
+	    .badge.good {
+	      color: var(--green);
+	      background: rgba(16, 185, 129, .12);
+	    }
+
+	    .badge.bad {
+	      color: var(--red);
+	      background: rgba(239, 68, 68, .12);
+	    }
+
+    .portfolio-gpm {
+      margin: 10px 0 14px;
+      font-size: 36px;
+      font-weight: 950;
+      color: var(--muted);
+      line-height: 1;
+    }
+
+    .portfolio-gpm.good {
+      color: var(--green);
+    }
+
+    .portfolio-gpm.bad {
+      color: var(--red);
+    }
+
+    .metric-line {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin: 8px 0;
+	      color: var(--text);
+      font-weight: 850;
+    }
+
+    .metric-line small {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .sep {
+      height: 1px;
+      margin: 12px 0;
+	      background: var(--line);
+    }
+
+    .stack-title {
+      margin: 0 0 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .bar-stack {
+      display: flex;
+      height: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+	      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .bar-part {
+      min-width: 2px;
+      height: 100%;
+    }
+
+    .legend-mini {
+      display: flex;
+      gap: 7px 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 750;
+    }
+
+    .legend-key {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-swatch {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .wow-strip {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .dual-chart-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+      gap: 14px;
+    }
+
+    .chart-block {
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(26, 40, 78, 0.9);
+    }
+
+    .chart-block .chart-box {
+      height: 315px;
+    }
+
+    .wow-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 118px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(26, 40, 78, 0.9);
+    }
+
+    .wow-card-head,
+    .wow-card-value {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .wow-card-head {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .wow-card-value {
+      margin-top: 7px;
+      color: var(--ink);
+      font-size: 24px;
+      font-weight: 950;
+    }
+
+    .wow-delta {
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .wow-delta.good { color: var(--green); background: rgba(16, 185, 129, .12); }
+    .wow-delta.bad { color: var(--red); background: rgba(239, 68, 68, .12); }
+    .wow-delta.neutral { color: var(--muted); background: rgba(148, 163, 184, .15); }
+
+    .wow-note {
+      margin-top: auto;
+      padding-top: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .chart-panel {
+      padding: 18px;
+      min-height: 360px;
+    }
+
+    .chart-panel.wide {
+      grid-column: 1 / -1;
+      min-height: 430px;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 10px;
+      align-items: start;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 950;
+    }
+
+    .panel-subtitle {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      color: var(--gold);
+	      background: rgba(99, 102, 241, .15);
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .chart-box {
+      height: 315px;
+    }
+
+    .chart-panel.wide .chart-box {
+      height: 355px;
+    }
+
+    .summary-panel {
+      padding: 0;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .table-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      font-size: 17px;
+      font-weight: 950;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 520px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1120px;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 9px 12px;
+	      border-bottom: 1px solid rgba(255, 255, 255, .08);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+	      color: var(--ink);
+	      background: #132042;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    tfoot td {
+	      color: var(--text);
+	      background: rgba(26, 40, 78, 0.9);
+      border-top: 3px solid var(--gold);
+      font-weight: 950;
+    }
+
+    .num-green {
+      color: var(--green);
+      font-weight: 900;
+    }
+
+    .num-red {
+      color: var(--red);
+      font-weight: 900;
+    }
+
+    .num-gold {
+      color: var(--gold);
+      font-weight: 900;
+    }
+
+    .num-orange {
+	      color: #f59e0b;
+      font-weight: 900;
+    }
+
+    .loading,
+    .error {
+      padding: 22px;
+      margin: 20px 24px;
+      border-radius: 12px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+	      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+
+    .error {
+      color: var(--red);
+    }
+
+    @media (max-width: 1400px) {
+      .filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .portfolio-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 980px) {
+      .topbar,
+      .filter-grid,
+      .chart-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .wow-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .dual-chart-grid {
+        grid-template-columns: 1fr;
+      }
+
+
+      .top-meta,
+      .actions {
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      .kpi-grid,
+      .recon-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .portfolio-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        white-space: normal;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        padding: 14px;
+      }
+
+      .kpi-grid,
+      .recon-kpis {
+        grid-template-columns: 1fr;
+      }
+
+      .card,
+      .wow-card {
+        min-height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" style="justify-content:flex-end;">
+    <div class="top-meta">
+      <div>
+        <div class="top-time" id="stamp">Memuat...</div>
+        <div id="scopeInfo">-</div>
+      </div>
+      <button class="refresh" id="refreshBtn" type="button">⟳ Refresh</button>
+    </div>
+  </header>
+
+  <div id="state" class="loading">Mengambil data dari Google Sheets...</div>
+
+  <main id="dashboard" class="app" style="display:none">
+    <nav class="tabs" aria-label="Dashboard tabs">
+      <button class="tab-btn active" type="button" data-tab="dashboardTab">Dashboard Utama</button>
+      <button class="tab-btn" type="button" data-tab="reconTab">Comm vs Mitra</button>
+    </nav>
+
+    <section class="filter-panel">
+      <div class="filter-grid">
+        <div>
+          <p class="filter-title">📍 Branch</p>
+          <div class="multi-select" id="branchSelect"></div>
+        </div>
+        <div>
+          <p class="filter-title">🗂️ Portofolio</p>
+          <div class="multi-select" id="portfolioSelect"></div>
+        </div>
+        <div>
+          <p class="filter-title">📅 Bulan</p>
+          <div class="multi-select" id="monthSelect"></div>
+        </div>
+        <div>
+          <p class="filter-title">🗓️ Minggu</p>
+          <div class="multi-select" id="weekSelect"></div>
+        </div>
+        <div class="actions">
+          <button class="action-btn" id="resetBtn" type="button">Reset</button>
+          <button class="action-btn primary" id="applyBtn" type="button">▶ Terapkan</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="dashboardTab" class="tab-view">
+    <section class="kpi-grid">
+      <article class="card">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-label">Revenue YTD</div>
+        <div class="kpi-value" id="kpiRevenue">-</div>
+        <div class="kpi-note" id="revenueNote">Nilai Potensi · BAST/BAPP/REKON</div>
+      </article>
+      <article class="card red">
+        <div class="kpi-icon">📦</div>
+        <div class="kpi-label">COGS YTD</div>
+        <div class="kpi-value red-text" id="kpiCogs">-</div>
+        <div class="kpi-note">Gaji + THR + SPPD + IF + Jasa + Material Stok</div>
+      </article>
+      <article class="card green">
+        <div class="kpi-icon">📈</div>
+        <div class="kpi-label">Gross Profit</div>
+        <div class="kpi-value green-text" id="kpiGp">-</div>
+        <div class="kpi-note" id="gpNote">Gross Profit positif</div>
+      </article>
+      <article class="card tan">
+        <div class="kpi-icon">🎯</div>
+        <div class="kpi-label">GPM Total</div>
+        <div class="kpi-value" id="kpiGpm">-</div>
+        <div class="kpi-note">Gross Profit Margin</div>
+      </article>
+      <article class="card orange">
+        <div class="kpi-icon">📦</div>
+        <div class="kpi-label">Jasa YTD</div>
+        <div class="kpi-value" id="kpiInvOut">-</div>
+        <div class="kpi-note" id="invOutNote">Tagihan Mitra eligible</div>
+      </article>
+      <article class="card blue">
+        <div class="kpi-icon">↩️</div>
+        <div class="kpi-label">Material Stok YTD</div>
+        <div class="kpi-value blue-text" id="kpiInvBack">-</div>
+        <div class="kpi-note">Pengeluaran - Pengembalian</div>
+      </article>
+    </section>
+
+    <section class="chart-panel wide" style="margin-bottom:16px">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">📆 Week-on-Week Revenue &amp; COGS</h2>
+          <div class="panel-subtitle" id="wowSubtitle">W1=1–7 · W2=8–14 · W3=15–21 · W4=22–28 · W5=29–akhir bulan</div>
+        </div>
+        <span class="pill" id="wowPill">0 minggu</span>
+      </div>
+      <div class="wow-strip">
+        <article class="wow-card">
+          <div class="wow-card-head"><span>Revenue minggu terbaru</span><span id="wowRevenueWeek">-</span></div>
+          <div class="wow-card-value"><span id="wowRevenue">Rp 0</span><span class="wow-delta neutral" id="wowRevenueDelta">N/A</span></div>
+          <div class="wow-note" id="wowRevenueNote">Dibanding minggu sebelumnya</div>
+        </article>
+        <article class="wow-card">
+          <div class="wow-card-head"><span>COGS minggu terbaru</span><span id="wowCogsWeek">-</span></div>
+          <div class="wow-card-value"><span id="wowCogs">Rp 0</span><span class="wow-delta neutral" id="wowCogsDelta">N/A</span></div>
+          <div class="wow-note" id="wowCogsNote">Dibanding minggu sebelumnya</div>
+        </article>
+      </div>
+      <div class="dual-chart-grid">
+        <div class="chart-block">
+          <div class="panel-head">
+            <div>
+              <h3 class="panel-title">📈 WoW Keseluruhan</h3>
+              <div class="panel-subtitle">Tren Revenue dan COGS total</div>
+            </div>
+          </div>
+          <div class="chart-box"><canvas id="wowChart"></canvas></div>
+        </div>
+        <div class="chart-block">
+          <div class="panel-head">
+            <div>
+              <h3 class="panel-title">🏢 WoW COGS per Branch</h3>
+              <div class="panel-subtitle">Minggu terbaru dibanding minggu sebelumnya</div>
+            </div>
+            <span class="pill" id="branchCogsPill">Terbesar: -</span>
+          </div>
+          <div class="chart-box"><canvas id="branchChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chart-panel wide" style="margin-bottom:18px">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">🔎 Analisis Komponen COGS</h2>
+          <div class="panel-subtitle">Tren komponen dan rincian branch memakai periode WoW yang sama agar seluruh nilai dapat direkonsiliasi</div>
+        </div>
+        <span class="pill" id="largestCogsPill">Terbesar: -</span>
+      </div>
+      <div class="chart-box"><canvas id="cogsSourceTrendChart"></canvas></div>
+      <div class="cogs-analysis-table">
+        <div class="table-head">
+          <span id="cogsDetailTitle">Rincian COGS per Branch</span>
+          <span class="pill" id="cogsDetailPill">0 branch</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Peringkat</th>
+                <th>Branch</th>
+                <th>Gaji</th>
+                <th>THR</th>
+                <th>SPPD</th>
+                <th>Mon IF</th>
+                <th>Jasa</th>
+                <th>Material Stok</th>
+                <th>Total Periode</th>
+                <th>Periode Pembanding</th>
+                <th>WoW</th>
+              </tr>
+            </thead>
+            <tbody id="cogsDetailRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-title">🗂️ Performance per Portofolio <small id="portfolioCount"></small></div>
+    <section class="portfolio-grid" id="portfolioCards"></section>
+
+    <section class="chart-grid">
+      <article class="chart-panel">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">📅 Tren Bulanan</h2>
+            <div class="panel-subtitle">Revenue vs COGS + line GPM %</div>
+          </div>
+          <span class="pill" id="monthPill">0 bln</span>
+        </div>
+        <div class="chart-box"><canvas id="trendChart"></canvas></div>
+      </article>
+
+      <article class="chart-panel">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">📉 GPM per Portofolio (%)</h2>
+            <div class="panel-subtitle">Hijau=profit · Merah=rugi · Abu=cost center</div>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="gpmChart"></canvas></div>
+      </article>
+
+      <article class="chart-panel">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">🎯 Komposisi COGS</h2>
+            <div class="panel-subtitle">Termasuk inventori net</div>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="cogsChart"></canvas></div>
+      </article>
+    </section>
+
+    <section class="table-panel summary-panel">
+      <div class="table-head">
+        <span>📋 Ringkasan per Portofolio</span>
+        <span class="pill" id="summaryPill">0 portofolio</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Portofolio</th>
+              <th>Revenue</th>
+              <th>COGS</th>
+              <th>Gaji</th>
+              <th>THR</th>
+              <th>SPPD</th>
+              <th>Mon IF</th>
+              <th>Jasa</th>
+              <th>Material Stok</th>
+              <th>Gross Profit</th>
+              <th>GPM %</th>
+            </tr>
+          </thead>
+          <tbody id="summaryRows"></tbody>
+          <tfoot id="summaryTotal"></tfoot>
+        </table>
+      </div>
+    </section>
+
+    <section class="table-panel summary-panel">
+      <div class="table-head">
+        <span>🎯 RKAP Revenue per Branch</span>
+        <span class="pill" id="rkapPill">0 baris</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Branch</th>
+              <th>Revenue</th>
+              <th>RKAP</th>
+              <th>Selisih</th>
+              <th>ACH %</th>
+            </tr>
+          </thead>
+          <tbody id="rkapRows"></tbody>
+          <tfoot id="rkapTotal"></tfoot>
+        </table>
+      </div>
+      <div class="table-head" style="margin-top:18px">
+        <span>📌 Summary RKAP Total Sumbagteng per Portofolio</span>
+        <span class="pill" id="rkapPortfolioPill">0 portofolio</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Portofolio</th>
+              <th>Revenue</th>
+              <th>RKAP</th>
+              <th>Selisih</th>
+              <th>ACH %</th>
+            </tr>
+          </thead>
+          <tbody id="rkapPortfolioRows"></tbody>
+          <tfoot id="rkapPortfolioTotal"></tfoot>
+        </table>
+      </div>
+    </section>
+    </section>
+
+    <section id="reconTab" class="tab-view hidden">
+      <section class="recon-kpis">
+        <article class="recon-card">
+          <div class="recon-label">Total Pekerjaan</div>
+          <div class="recon-value" id="reconTotal">-</div>
+        </article>
+        <article class="recon-card">
+          <div class="recon-label">Match Comm & Mitra</div>
+          <div class="recon-value green-text" id="reconMatched">-</div>
+        </article>
+        <article class="recon-card">
+          <div class="recon-label">Hanya di Comm</div>
+          <div class="recon-value" id="reconCommOnly">-</div>
+        </article>
+        <article class="recon-card">
+          <div class="recon-label">Hanya di Mitra</div>
+          <div class="recon-value blue-text" id="reconMitraOnly">-</div>
+        </article>
+      </section>
+
+      <section class="table-panel">
+        <div class="table-head">
+          <span>🔎 Rekon Mon Tagihan Comm vs Mon Tagihan Mitra</span>
+          <span class="pill" id="reconPill">0 baris</span>
+        </div>
+        <div class="table-wrap">
+          <table class="recon-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Total Pekerjaan</th>
+                <th>Matched</th>
+                <th>Comm Only</th>
+                <th>Mitra Only</th>
+		                <th>Nilai Comm</th>
+		                <th>Nilai Mitra</th>
+		                <th>Selisih</th>
+		              </tr>
+            </thead>
+            <tbody id="reconRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+	  <script>
+	    const ALL = 'ALL';
+	    const MONTH_ORDER = {
+	      JANUARI: 1,
+	      FEBRUARI: 2,
+	      MARET: 3,
+	      APRIL: 4,
+	      MEI: 5,
+	      JUNI: 6,
+	      JULI: 7,
+	      AGUSTUS: 8,
+	      SEPTEMBER: 9,
+	      OKTOBER: 10,
+	      NOVEMBER: 11,
+	      DESEMBER: 12,
+	      TOTAL: 99
+	    };
+	    const SOURCE_ORDER = ['Gaji', 'THR', 'SPPD', 'IF', 'JASA', 'MATERIAL STOK'];
+    const SOURCE_LABEL = {
+      'Gaji': '👷 Gaji',
+      'THR': '🎁 THR',
+      'SPPD': '🚚 SPPD',
+      'IF': '📄 Mon IF',
+      'JASA': '🤝 Jasa',
+      'MATERIAL STOK': '📦 Material Stok'
+    };
+	    const SOURCE_COLOR = {
+	      'Gaji': '#3b82f6',
+	      'THR': '#8b5cf6',
+	      'SPPD': '#6366f1',
+	      'IF': '#ef4444',
+	      'JASA': '#ec4899',
+	      'MATERIAL STOK': '#f59e0b'
+	    };
+
+    let sourceRecords = [];
+    let reconRecords = [];
+    let rkapRecords = [];
+    let filterValues = { branch: [], portfolio: [], month: [], week: [] };
+    let filterMeta = { branches: [], portfolios: [], months: [], weeks: [] };
+    let weekStartByOption = {};
+    let activeTab = 'dashboardTab';
+    let charts = {};
+    let loadTimer = null;
+    let dashboardAsOfDate = '';
+
+    const rupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+    const pct = new Intl.NumberFormat('id-ID', { style: 'percent', maximumFractionDigits: 2 });
+
+    function init() {
+      document.getElementById('refreshBtn').addEventListener('click', loadData);
+      document.getElementById('resetBtn').addEventListener('click', resetFilters);
+      document.querySelectorAll('.tab-btn').forEach(button => {
+        button.addEventListener('click', () => switchTab(button.dataset.tab));
+      });
+      document.getElementById('applyBtn').addEventListener('click', () => {
+        document.querySelectorAll('.multi-select.open').forEach(open => open.classList.remove('open'));
+        render();
+      });
+	      document.addEventListener('click', () => {
+	        document.querySelectorAll('.multi-select.open').forEach(open => open.classList.remove('open'));
+	      });
+	      loadData();
+	    }
+
+    function loadData() {
+      document.getElementById('state').style.display = '';
+      document.getElementById('state').className = 'loading';
+      document.getElementById('state').textContent = 'Mengambil data dari Google Sheets...';
+      document.getElementById('dashboard').style.display = 'none';
+      clearTimeout(loadTimer);
+      loadTimer = setTimeout(() => {
+        const state = document.getElementById('state');
+        if (state.style.display !== 'none') {
+          state.className = 'error';
+          state.textContent = 'Data belum selesai dimuat. Biasanya ini karena Apps Script masih memproses sheet cukup besar atau butuh otorisasi akses spreadsheet. Coba refresh sekali lagi setelah izin Apps Script selesai.';
+        }
+      }, 45000);
+      google.script.run
+        .withSuccessHandler(onData)
+        .withFailureHandler(onFailure)
+        .COGS_getDashboardData();
+    }
+
+    function onData(payload) {
+      clearTimeout(loadTimer);
+      dashboardAsOfDate = payload.asOfDate || '';
+      sourceRecords = (payload.records || []).map(row => ({
+        source: row.source,
+        type: row.type,
+        month: row.month,
+        date: row.date || '',
+        branch: row.branch,
+        portfolio: row.portfolio,
+        amount: Number(row.amount || 0)
+      }));
+      reconRecords = (payload.recon || []).map(row => ({
+        ...row,
+        amountDiff: Number(row.amountDiff || 0),
+        comm: { ...(row.comm || {}), amount: Number(row.comm && row.comm.amount || 0), count: Number(row.comm && row.comm.count || 0) },
+        mitra: { ...(row.mitra || {}), amount: Number(row.mitra && row.mitra.amount || 0), count: Number(row.mitra && row.mitra.count || 0) }
+      }));
+      rkapRecords = (payload.rkap || []).map(row => ({
+        month: row.month,
+        branch: row.branch,
+        portfolio: row.portfolio,
+        target: Number(row.target || 0)
+      }));
+
+      filterMeta = {
+        branches: payload.filters.branches || [],
+        portfolios: payload.filters.portfolios || [],
+        months: payload.filters.months || [],
+        weeks: []
+      };
+      filterMeta.weeks = buildWeekOptions();
+
+      document.getElementById('stamp').textContent = payload.generatedAt || '-';
+      const cutOffDate = isoDate(dashboardAsOfDate);
+      const cutOffText = cutOffDate ? cutOffDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+      document.getElementById('scopeInfo').textContent = `Periode aktif: ${filterMeta.months.filter(m => m !== 'NON PERIODIK').length} bulan · Cut-off ${cutOffText}`;
+      renderFilters();
+      bindFilterEvents();
+      document.getElementById('state').style.display = 'none';
+      document.getElementById('dashboard').style.display = '';
+      render();
+    }
+
+    function switchTab(tabId) {
+      activeTab = tabId;
+      document.querySelectorAll('.tab-btn').forEach(button => {
+        button.classList.toggle('active', button.dataset.tab === tabId);
+      });
+      document.querySelectorAll('.tab-view').forEach(view => {
+        view.classList.toggle('hidden', view.id !== tabId);
+      });
+      render();
+    }
+
+    function onFailure(error) {
+      clearTimeout(loadTimer);
+      const state = document.getElementById('state');
+      state.className = 'error';
+      state.textContent = 'Data belum bisa dimuat: ' + (error && error.message ? error.message : error);
+    }
+
+    function renderFilters(openField = '') {
+      renderMultiSelect('branchSelect', 'branch', filterMeta.branches, openField);
+      renderMultiSelect('portfolioSelect', 'portfolio', filterMeta.portfolios, openField);
+      renderMultiSelect('monthSelect', 'month', filterMeta.months, openField);
+      renderMultiSelect('weekSelect', 'week', filterMeta.weeks, openField);
+    }
+
+    function renderMultiSelect(id, field, values, openField) {
+      const selected = filterValues[field] || [];
+      const safeValues = values.filter(Boolean);
+      const summary = selected.length ? selected.join(', ') : 'ALL';
+      const count = selected.length ? `${selected.length} dipilih` : 'ALL';
+      document.getElementById(id).className = `multi-select ${openField === field ? 'open' : ''}`;
+
+      document.getElementById(id).innerHTML = `
+        <button class="multi-trigger" type="button" data-field="${field}">
+          <span class="multi-label">${escapeHtml(summary)}</span>
+          <span class="multi-count">${escapeHtml(count)} ▾</span>
+        </button>
+        <div class="multi-menu">
+          <label class="multi-option">
+            <input type="checkbox" data-field="${field}" data-value="${ALL}" ${selected.length ? '' : 'checked'}>
+            <span>ALL</span>
+          </label>
+          ${safeValues.map(value => `
+            <label class="multi-option">
+              <input type="checkbox" data-field="${field}" data-value="${escapeHtml(value)}" ${selected.includes(value) ? 'checked' : ''}>
+              <span>${escapeHtml(value)}</span>
+            </label>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function bindFilterEvents() {
+      document.querySelectorAll('.multi-trigger').forEach(button => {
+        button.addEventListener('click', event => {
+          event.stopPropagation();
+          const select = button.closest('.multi-select');
+          document.querySelectorAll('.multi-select.open').forEach(open => {
+            if (open !== select) open.classList.remove('open');
+          });
+          select.classList.toggle('open');
+        });
+      });
+
+      document.querySelectorAll('.multi-menu').forEach(menu => {
+        menu.addEventListener('click', event => event.stopPropagation());
+      });
+
+      document.querySelectorAll('.multi-menu input').forEach(input => {
+        input.addEventListener('change', event => {
+          const field = event.target.dataset.field;
+          const value = event.target.dataset.value;
+          if (value === ALL) {
+            filterValues[field] = [];
+          } else {
+            const selected = new Set(filterValues[field] || []);
+            if (event.target.checked) selected.add(value);
+            else selected.delete(value);
+            filterValues[field] = Array.from(selected);
+          }
+          if (field === 'month') {
+            filterMeta.weeks = buildWeekOptions();
+            filterValues.week = (filterValues.week || []).filter(week => filterMeta.weeks.includes(week));
+          }
+          renderFilters(field);
+          bindFilterEvents();
+          render();
+        });
+      });
+    }
+
+    function resetFilters() {
+      filterValues = { branch: [], portfolio: [], month: [], week: [] };
+      filterMeta.weeks = buildWeekOptions();
+      renderFilters();
+      bindFilterEvents();
+      render();
+    }
+
+    function filteredRecords(ignoreMonth = false) {
+      const selectedWeeks = new Set(selectedWeekNumbers());
+      return sourceRecords.filter(row => {
+        if (filterValues.branch.length && !filterValues.branch.includes(row.branch)) return false;
+        if (filterValues.portfolio.length && !filterValues.portfolio.includes(row.portfolio)) return false;
+        if (filterValues.week.length) {
+          if (!row.date || !/^\d{4}-\d{2}-\d{2}$/.test(row.date)) return false;
+          if (!selectedWeeks.has(weekOfMonth(row.date))) return false;
+        }
+        if (row.month === 'BEBAN DASAR' || !filterMeta.months.includes(row.month)) return true;
+        if (!ignoreMonth && filterValues.month.length && !filterValues.month.includes(row.month)) return false;
+        return true;
+      });
+    }
+
+    function filteredReconRecords() {
+      return reconRecords.filter(row => {
+        const comm = row.comm || {};
+        const mitra = row.mitra || {};
+        const branchText = [row.branch, comm.branchesText, mitra.branchesText].join(' ');
+        const monthText = [row.month, comm.monthsText, mitra.monthsText].join(' ');
+        if (filterValues.branch.length && !filterValues.branch.some(branch => branchText.includes(branch))) return false;
+        if (filterValues.portfolio.length && !filterValues.portfolio.includes(row.portfolio)) return false;
+        const hasVisibleMonth = filterMeta.months.some(month => monthText.includes(month));
+        if (filterValues.month.length && hasVisibleMonth && !filterValues.month.some(month => monthText.includes(month))) return false;
+        return true;
+      });
+    }
+
+    function render() {
+      const records = filteredRecords(false);
+      const byPortfolio = groupByDimension(records, 'portfolio');
+      const summary = summarizeRows(records);
+      const sourceTotals = groupBySource(records);
+      const weekly = buildWeeklyRows(records);
+
+      renderKpis(summary, sourceTotals);
+      renderWow(records, weekly);
+      renderCogsAnalysis(records, weekly);
+      renderPortfolioCards(byPortfolio);
+      renderTrendChart(records);
+      renderGpmChart(byPortfolio);
+      renderCogsChart(sourceTotals);
+      renderSummaryTable(byPortfolio, summary);
+      renderRkapTable(records);
+      renderRecon();
+    }
+
+    function activeMonthOptions() {
+      const months = filterMeta.months.filter(month => month !== 'NON PERIODIK' && month !== 'BEBAN DASAR');
+      return filterValues.month.length
+        ? months.filter(month => filterValues.month.includes(month))
+        : months;
+    }
+
+    function buildWeekOptions() {
+      weekStartByOption = {};
+      const year = Number(String(dashboardAsOfDate || '').slice(0, 4)) || 2026;
+      const months = (filterValues.month && filterValues.month.length ? filterValues.month : filterMeta.months)
+        .filter(month => MONTH_ORDER[month] >= 1 && MONTH_ORDER[month] <= 12);
+      const maxWeeks = months.reduce((max, month) => {
+        const days = new Date(year, MONTH_ORDER[month], 0).getDate();
+        return Math.max(max, Math.ceil(days / 7));
+      }, 0) || 5;
+      const options = [];
+      for (let week = 1; week <= maxWeeks; week++) {
+        const label = `W${week}`;
+        weekStartByOption[label] = week;
+        options.push(label);
+      }
+      return options;
+    }
+
+    function selectedWeekNumbers() {
+      return (filterValues.week || []).map(value => weekStartByOption[value]).filter(Boolean);
+    }
+
+    function weekOfMonth(dateKey) {
+      const date = isoDate(dateKey);
+      return date ? Math.ceil(date.getDate() / 7) : 0;
+    }
+
+    function selectedWeekBucketKeys() {
+      const year = Number(String(dashboardAsOfDate || '').slice(0, 4)) || 2026;
+      const months = (filterValues.month && filterValues.month.length ? filterValues.month : filterMeta.months)
+        .filter(month => MONTH_ORDER[month] >= 1 && MONTH_ORDER[month] <= 12);
+      const weekNumbers = selectedWeekNumbers();
+      const keys = [];
+      months.forEach(month => {
+        const monthNumber = MONTH_ORDER[month];
+        const days = new Date(year, monthNumber, 0).getDate();
+        weekNumbers.forEach(week => {
+          const day = 1 + (week - 1) * 7;
+          if (day <= days) keys.push(localDateKey(new Date(year, monthNumber - 1, day)));
+        });
+      });
+      return Array.from(new Set(keys)).sort();
+    }
+
+    function summarizeRows(records) {
+      const base = emptySummary();
+      records.forEach(row => addRecord(base, row));
+      finalizeSummary(base);
+      return base;
+    }
+
+    function emptySummary(name = '') {
+      return {
+        name,
+        revenue: 0,
+        cogs: 0,
+        gp: 0,
+        gpm: null,
+        sources: Object.fromEntries(SOURCE_ORDER.map(src => [src, 0]))
+      };
+    }
+
+    function addRecord(target, row) {
+      if (row.type === 'REVENUE') target.revenue += row.amount;
+      if (row.type === 'COGS') {
+        target.cogs += row.amount;
+        target.sources[row.source] = (target.sources[row.source] || 0) + row.amount;
+      }
+    }
+
+    function finalizeSummary(row) {
+      row.gp = row.revenue - row.cogs;
+      row.gpm = row.revenue ? row.gp / row.revenue : null;
+      return row;
+    }
+
+    function groupByDimension(records, field) {
+      const map = {};
+      records.forEach(row => {
+        const key = row[field] || '-';
+        if (!map[key]) map[key] = emptySummary(key);
+        addRecord(map[key], row);
+      });
+      return Object.values(map)
+        .map(finalizeSummary)
+        .sort((a, b) => b.revenue - a.revenue || Math.abs(b.cogs) - Math.abs(a.cogs));
+    }
+
+    function groupBySource(records) {
+      const totals = Object.fromEntries(SOURCE_ORDER.map(src => [src, 0]));
+      records.filter(row => row.type === 'COGS').forEach(row => {
+        totals[row.source] = (totals[row.source] || 0) + row.amount;
+      });
+      return totals;
+    }
+
+	    function renderKpis(summary, sourceTotals) {
+	      const jasa = sourceTotals['JASA'] || 0;
+	      const materialStok = sourceTotals['MATERIAL STOK'] || 0;
+      document.getElementById('kpiRevenue').textContent = moneyCompact(summary.revenue);
+      document.getElementById('kpiCogs').textContent = moneyCompact(summary.cogs);
+      document.getElementById('kpiGp').textContent = moneyCompact(summary.gp);
+      document.getElementById('kpiGp').className = `kpi-value ${summary.gp >= 0 ? 'green-text' : 'red-text'}`;
+      document.getElementById('kpiGpm').textContent = summary.gpm === null ? 'N/A' : pct.format(summary.gpm);
+      document.getElementById('kpiGpm').className = `kpi-value ${summary.gpm !== null && summary.gpm >= 0 ? 'green-text' : 'red-text'}`;
+	      document.getElementById('kpiInvOut').textContent = moneyCompact(jasa);
+	      document.getElementById('kpiInvBack').textContent = moneyCompact(materialStok);
+	      document.getElementById('gpNote').textContent = summary.gp >= 0 ? 'Gross Profit positif ✓' : 'Gross Profit negatif';
+	      document.getElementById('invOutNote').textContent = `Status Berkas sesuai stage`;
+      document.getElementById('revenueNote').textContent = `${activeMonthOptions().length} bln · Nilai Potensi · BAST/BAPP/REKON`;
+    }
+
+    function renderPortfolioCards(rows) {
+      document.getElementById('portfolioCount').textContent = `${rows.length} portofolio`;
+      const topRows = rows.slice(0, 15);
+      document.getElementById('portfolioCards').innerHTML = topRows.map(row => {
+        const status = row.revenue ? (row.gp >= 0 ? 'good' : 'bad') : '';
+        const badge = row.revenue ? (row.gp >= 0 ? 'Profitable ✓' : 'Rugi ⚠') : 'Cost Center';
+        const gpmText = row.gpm === null ? 'N/A' : pct.format(row.gpm);
+        const parts = cogsParts(row);
+        return `
+          <article class="card portfolio-card ${status}">
+            <div class="portfolio-head">
+              <span><span class="dot" style="background:${portfolioColor(row.name)}"></span>${escapeHtml(row.name)}</span>
+              <span class="badge ${status}">${badge}</span>
+            </div>
+            <div class="portfolio-gpm ${status}">${gpmText}</div>
+            <div class="metric-line"><span><small>●</small> Revenue</span><span class="num-gold">${formatMoney(row.revenue)}</span></div>
+            <div class="metric-line"><span><small>●</small> COGS</span><span class="num-red">${formatMoney(row.cogs)}</span></div>
+            <div class="sep"></div>
+            <div class="metric-line"><span><small>●</small> Gross Profit</span><span class="${row.gp >= 0 ? 'num-green' : 'num-red'}">${formatMoney(row.gp)}</span></div>
+            <div class="sep"></div>
+            <p class="stack-title">Komposisi COGS</p>
+            <div class="bar-stack">${parts.map(part => `<span class="bar-part" style="width:${part.width}%;background:${SOURCE_COLOR[part.source]}"></span>`).join('')}</div>
+            <div class="legend-mini">${parts.map(part => `<span class="legend-key"><i class="legend-swatch" style="background:${SOURCE_COLOR[part.source]}"></i>${SOURCE_LABEL[part.source]}: ${moneyCompact(part.value)}</span>`).join('')}</div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function cogsParts(row) {
+      const entries = SOURCE_ORDER.map(source => ({ source, value: row.sources[source] || 0 }))
+        .filter(part => part.value !== 0);
+      const totalAbs = entries.reduce((total, part) => total + Math.abs(part.value), 0) || 1;
+      return entries.map(part => ({ ...part, width: Math.max(2, Math.abs(part.value) / totalAbs * 100) }));
+    }
+
+    function renderWow(records, weekly) {
+      weekly = weekly || buildWeeklyRows(records);
+      const rows = weekly.rows;
+      const latest = rows.length ? rows[rows.length - 1] : { revenue: 0, cogs: 0, week: '' };
+      const previous = rows.length > 1 ? rows[rows.length - 2] : { revenue: 0, cogs: 0, week: '' };
+      const shown = rows.slice(-16);
+      const weekText = latest.week ? weekRangeLabel(latest.week) : '-';
+
+      document.getElementById('wowPill').textContent = rows.length > shown.length
+        ? `${shown.length} dari ${rows.length} minggu`
+        : `${rows.length} minggu`;
+      document.getElementById('wowRevenueWeek').textContent = weekText;
+      document.getElementById('wowCogsWeek').textContent = weekText;
+      document.getElementById('wowRevenue').textContent = moneyCompact(latest.revenue);
+      document.getElementById('wowCogs').textContent = moneyCompact(latest.cogs);
+      document.getElementById('wowRevenueNote').textContent = `Minggu sebelumnya ${formatMoney(previous.revenue)}`;
+      document.getElementById('wowCogsNote').textContent = `Minggu sebelumnya ${formatMoney(previous.cogs)}`;
+      setWowDelta('wowRevenueDelta', wowRate(latest.revenue, previous.revenue), true);
+      setWowDelta('wowCogsDelta', wowRate(latest.cogs, previous.cogs), false);
+
+      const revenueCoverage = weekly.totalRevenueAbs ? weekly.datedRevenueAbs / weekly.totalRevenueAbs : 0;
+      const cogsCoverage = weekly.totalCogsAbs ? weekly.datedCogsAbs / weekly.totalCogsAbs : 0;
+      document.getElementById('wowSubtitle').textContent = `Minggu dalam bulan · cakupan tanggal: Revenue ${pct.format(revenueCoverage)}, COGS ${pct.format(cogsCoverage)}`;
+
+      makeChart('wowChart', {
+        type: 'line',
+        data: {
+          labels: shown.map(row => weekRangeLabel(row.week, true)),
+          datasets: [
+            { label: 'Revenue Total', data: shown.map(row => row.revenue), borderColor: '#6366f1', backgroundColor: '#6366f1', borderWidth: 3, pointRadius: 4, pointHoverRadius: 6, tension: .3, fill: false },
+            { label: 'COGS Total', data: shown.map(row => row.cogs), borderColor: '#ef4444', backgroundColor: '#ef4444', borderWidth: 3, pointRadius: 4, pointHoverRadius: 6, tension: .3, fill: false }
+          ]
+        },
+        options: chartOptions()
+      });
+      renderWowBranchChart(latest, previous);
+    }
+
+    function renderWowBranchChart(latest, previous) {
+      const latestBranch = latest.branchCogs || {};
+      const previousBranch = previous.branchCogs || {};
+      const names = Array.from(new Set(Object.keys(latestBranch).concat(Object.keys(previousBranch))))
+        .sort((a, b) => Number(latestBranch[b] || 0) - Number(latestBranch[a] || 0)
+          || Number(previousBranch[b] || 0) - Number(previousBranch[a] || 0))
+        .slice(0, 8);
+      const currentNames = names.filter(name => Number(latestBranch[name] || 0) !== 0);
+      const largest = currentNames.length ? currentNames[0] : '';
+      document.getElementById('branchCogsPill').textContent = largest
+        ? `Terbesar: ${largest} · ${moneyCompact(latestBranch[largest])}`
+        : 'Belum ada COGS minggu ini';
+
+      makeChart('branchChart', {
+        type: 'bar',
+        data: {
+          labels: names,
+          datasets: [
+            {
+              label: previous.week ? weekRangeLabel(previous.week, true) : 'Minggu sebelumnya',
+              data: names.map(name => Number(previousBranch[name] || 0)),
+              backgroundColor: 'rgba(148,163,184,.52)',
+              borderColor: '#94a3b8',
+              borderWidth: 1,
+              borderRadius: 4
+            },
+            {
+              label: latest.week ? weekRangeLabel(latest.week, true) : 'Minggu terbaru',
+              data: names.map(name => Number(latestBranch[name] || 0)),
+              backgroundColor: 'rgba(239,68,68,.82)',
+              borderColor: '#ef4444',
+              borderWidth: 1,
+              borderRadius: 4
+            }
+          ]
+        },
+        options: chartOptions({ horizontal: true, preciseHover: true })
+      });
+    }
+
+    function renderCogsAnalysis(records, weekly) {
+      const rows = weekly.rows || [];
+      const latestIndex = rows.length - 1;
+      const latest = latestIndex >= 0 ? rows[latestIndex] : { branchCogs: {}, sourceCogs: {}, branchSourceCogs: {} };
+      const latestHasCogs = Object.values(latest.branchCogs || {}).some(value => Number(value || 0) !== 0);
+      const focusIndex = latestHasCogs ? latestIndex : latestIndex - 1;
+      const focus = focusIndex >= 0 ? rows[focusIndex] : { branchCogs: {}, sourceCogs: {}, branchSourceCogs: {} };
+      const comparison = focusIndex > 0 ? rows[focusIndex - 1] : { branchCogs: {}, sourceCogs: {}, branchSourceCogs: {} };
+      const branchNames = Array.from(new Set(Object.keys(focus.branchCogs || {}).concat(Object.keys(comparison.branchCogs || {}))));
+      const branchDetails = branchNames
+        .map(branch => ({
+          branch,
+          total: Number(focus.branchCogs[branch] || 0),
+          previous: Number((comparison.branchCogs || {})[branch] || 0),
+          sources: (focus.branchSourceCogs || {})[branch] || {},
+          previousSources: (comparison.branchSourceCogs || {})[branch] || {}
+        }))
+        .filter(row => row.total !== 0 || row.previous !== 0)
+        .sort((a, b) => b.total - a.total || b.previous - a.previous);
+
+      const topBranch = branchDetails.length ? branchDetails[0] : null;
+      const focusLabel = focus.week ? weekRangeLabel(focus.week, true) : '-';
+      const comparisonLabel = comparison.week ? weekRangeLabel(comparison.week, true) : '-';
+      const periodRole = latestHasCogs ? 'minggu terbaru' : 'minggu sebelumnya (minggu terbaru masih kosong)';
+      document.getElementById('largestCogsPill').textContent = topBranch
+        ? `Branch terbesar: ${topBranch.branch} · ${moneyCompact(topBranch.total)}`
+        : 'Branch terbesar: -';
+      document.getElementById('cogsDetailTitle').textContent = `Rincian COGS per Branch — ${focusLabel}`;
+      document.getElementById('cogsDetailPill').textContent = `${branchDetails.length} branch · ${periodRole}`;
+      document.getElementById('cogsDetailRows').innerHTML = branchDetails.length ? branchDetails.map((row, index) => {
+        const rate = wowRate(row.total, row.previous);
+        const rateText = rate === null ? 'N/A' : `${rate >= 0 ? '+' : ''}${pct.format(rate)}`;
+        const rateClass = rate === null ? '' : rate <= 0 ? 'num-green' : 'num-red';
+        return `
+          <tr>
+            <td><span class="rank-badge">${index + 1}</span></td>
+            <td><b>${escapeHtml(row.branch)}</b></td>
+            <td>${componentComparisonHtml(row.sources, row.previousSources, 'Gaji')}</td>
+            <td>${componentComparisonHtml(row.sources, row.previousSources, 'THR')}</td>
+            <td>${componentComparisonHtml(row.sources, row.previousSources, 'SPPD')}</td>
+            <td>${componentComparisonHtml(row.sources, row.previousSources, 'IF')}</td>
+            <td>${componentComparisonHtml(row.sources, row.previousSources, 'JASA')}</td>
+            <td>${componentComparisonHtml(row.sources, row.previousSources, 'MATERIAL STOK')}</td>
+            <td class="${row.total >= 0 ? 'num-red' : 'num-green'}"><b>${formatMoney(row.total)}</b></td>
+            <td title="${escapeHtml(comparisonLabel)}">${formatMoney(row.previous)}</td>
+            <td class="${rateClass}">${rateText}</td>
+          </tr>
+        `;
+      }).join('') : '<tr><td colspan="11">Belum ada COGS bertanggal pada periode WoW yang dipilih.</td></tr>';
+
+      const shown = rows.slice(-16);
+      const trendSources = SOURCE_ORDER.filter(source => shown.some(row => Number((row.sourceCogs || {})[source] || 0) !== 0));
+      makeChart('cogsSourceTrendChart', {
+        type: 'line',
+        data: {
+          labels: shown.map(row => weekRangeLabel(row.week, true)),
+          datasets: trendSources.map((source, index) => ({
+            label: plainSourceLabel(source),
+            data: shown.map(row => Number((row.sourceCogs || {})[source] || 0)),
+            borderColor: SOURCE_COLOR[source] || ['#3b82f6', '#06b6d4', '#8b5cf6', '#f59e0b'][index % 4],
+            backgroundColor: SOURCE_COLOR[source] || '#94a3b8',
+            borderWidth: source === 'THR' ? 2 : 2.5,
+            borderDash: source === 'THR' ? [6, 4] : [],
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            tension: .28,
+            fill: false
+          }))
+        },
+        options: chartOptions()
+      });
+    }
+
+    function componentComparisonHtml(currentSources, previousSources, source) {
+      const current = Number((currentSources || {})[source] || 0);
+      const previous = Number((previousSources || {})[source] || 0);
+      return `<div>${formatMoney(current)}</div><div class="recon-muted">Lalu ${formatMoney(previous)}</div>`;
+    }
+
+    function plainSourceLabel(source) {
+      return String(SOURCE_LABEL[source] || source || '').replace(/^\S+\s+/, '');
+    }
+
+    function buildWeeklyRows(records) {
+      const map = {};
+      let minWeek = '';
+      let maxWeek = '';
+      let totalRevenueAbs = 0;
+      let totalCogsAbs = 0;
+      let datedRevenueAbs = 0;
+      let datedCogsAbs = 0;
+      const branchTotals = {};
+
+      records.forEach(row => {
+        if (dashboardAsOfDate && row.date && row.date > dashboardAsOfDate) return;
+        const amountAbs = Math.abs(Number(row.amount || 0));
+        if (row.type === 'REVENUE') totalRevenueAbs += amountAbs;
+        if (row.type === 'COGS') totalCogsAbs += amountAbs;
+        if (!row.date || !/^\d{4}-\d{2}-\d{2}$/.test(row.date)) return;
+
+        const week = weekBucketStart(row.date);
+        if (!week) return;
+        if (row.type === 'REVENUE') datedRevenueAbs += amountAbs;
+        if (row.type === 'COGS') datedCogsAbs += amountAbs;
+        if (!map[week]) map[week] = { week, revenue: 0, cogs: 0, branchCogs: {}, sourceCogs: {}, branchSourceCogs: {} };
+        if (row.type === 'REVENUE') map[week].revenue += Number(row.amount || 0);
+        if (row.type === 'COGS') {
+          const branch = row.branch || '-';
+          const amount = Number(row.amount || 0);
+          map[week].cogs += amount;
+          map[week].branchCogs[branch] = (map[week].branchCogs[branch] || 0) + amount;
+          map[week].sourceCogs[row.source] = (map[week].sourceCogs[row.source] || 0) + amount;
+          if (!map[week].branchSourceCogs[branch]) map[week].branchSourceCogs[branch] = {};
+          map[week].branchSourceCogs[branch][row.source] = (map[week].branchSourceCogs[branch][row.source] || 0) + amount;
+          branchTotals[branch] = (branchTotals[branch] || 0) + amount;
+        }
+        if (!minWeek || week < minWeek) minWeek = week;
+        if (!maxWeek || week > maxWeek) maxWeek = week;
+      });
+
+      const selectedWeeks = selectedWeekBucketKeys();
+      const selectedWeekSet = new Set(selectedWeeks);
+      if (selectedWeeks.length) {
+        minWeek = selectedWeeks[0];
+        maxWeek = selectedWeeks[selectedWeeks.length - 1];
+      } else {
+        // Tanpa filter minggu, minggu terbaru ditambatkan ke minggu saat ini.
+        const asOfWeek = dashboardAsOfDate ? weekBucketStart(dashboardAsOfDate) : '';
+        if (asOfWeek) {
+          if (!minWeek) minWeek = asOfWeek;
+          if (!maxWeek || asOfWeek > maxWeek) maxWeek = asOfWeek;
+        }
+      }
+
+      const rows = [];
+      for (let week = minWeek; week && week <= maxWeek; week = nextWeekBucketKey(week)) {
+        if (selectedWeekSet.size && !selectedWeekSet.has(week)) continue;
+        rows.push(map[week] || { week, revenue: 0, cogs: 0, branchCogs: {}, sourceCogs: {}, branchSourceCogs: {} });
+      }
+      const branches = Object.keys(branchTotals)
+        .map(name => ({ name, cogs: branchTotals[name] }))
+        .sort((a, b) => b.cogs - a.cogs);
+      return { rows, branches, totalRevenueAbs, totalCogsAbs, datedRevenueAbs, datedCogsAbs };
+    }
+
+    function weekBucketStart(dateKey) {
+      const date = isoDate(dateKey);
+      if (!date) return '';
+      const startDay = 1 + (Math.ceil(date.getDate() / 7) - 1) * 7;
+      date.setDate(startDay);
+      return localDateKey(date);
+    }
+
+    function nextWeekBucketKey(dateKey) {
+      const date = isoDate(dateKey);
+      if (!date) return '';
+      const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+      if (date.getDate() + 7 <= daysInMonth) {
+        date.setDate(date.getDate() + 7);
+      } else {
+        date.setMonth(date.getMonth() + 1, 1);
+      }
+      return localDateKey(date);
+    }
+
+    function isoDate(dateKey) {
+      const parts = String(dateKey || '').split('-').map(Number);
+      if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) return null;
+      const date = new Date(parts[0], parts[1] - 1, parts[2]);
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    function localDateKey(date) {
+      return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+    }
+
+    function weekRangeLabel(weekKey, compact = false) {
+      const start = isoDate(weekKey);
+      if (!start) return '-';
+      const daysInMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+      const end = new Date(start.getFullYear(), start.getMonth(), Math.min(start.getDate() + 6, daysInMonth));
+      const options = compact ? { day: '2-digit', month: 'short' } : { day: '2-digit', month: 'short', year: 'numeric' };
+      const startText = start.toLocaleDateString('id-ID', options);
+      const endText = end.toLocaleDateString('id-ID', options);
+      return `${startText}–${endText}`;
+    }
+
+    function wowRate(current, previous) {
+      if (!previous) return null;
+      return (current - previous) / Math.abs(previous);
+    }
+
+    function setWowDelta(id, rate, increaseIsGood) {
+      const element = document.getElementById(id);
+      if (rate === null || !isFinite(rate)) {
+        element.textContent = 'N/A';
+        element.className = 'wow-delta neutral';
+        return;
+      }
+      const isGood = increaseIsGood ? rate >= 0 : rate <= 0;
+      element.textContent = `${rate >= 0 ? '+' : ''}${pct.format(rate)}`;
+      element.className = `wow-delta ${isGood ? 'good' : 'bad'}`;
+    }
+
+    function renderTrendChart(records) {
+      const months = activeMonthOptions();
+      document.getElementById('monthPill').textContent = `${months.length} bln`;
+      const rows = months.map(month => ({ month, ...summarizeRows(records.filter(row => row.month === month)) }));
+      makeChart('trendChart', {
+        type: 'bar',
+        data: {
+          labels: rows.map(row => row.month),
+          datasets: [
+	            { label: 'Revenue', data: rows.map(row => row.revenue), backgroundColor: '#6366f1', borderColor: '#6366f1', yAxisID: 'y' },
+	            { label: 'COGS', data: rows.map(row => row.cogs), backgroundColor: 'rgba(239,68,68,.78)', borderColor: '#ef4444', yAxisID: 'y' },
+	            { type: 'line', label: 'GPM %', data: rows.map(row => row.gpm === null ? null : row.gpm * 100), borderColor: '#06b6d4', backgroundColor: '#06b6d4', pointRadius: 5, tension: .35, yAxisID: 'y1' }
+          ]
+        },
+        options: chartOptions({ percentAxis: true })
+      });
+    }
+
+    function renderGpmChart(rows) {
+      const top = rows.slice(0, 12);
+      makeChart('gpmChart', {
+        type: 'bar',
+        data: {
+          labels: top.map(row => row.name),
+          datasets: [{
+            label: 'GPM %',
+            data: top.map(row => row.gpm === null ? 0 : row.gpm * 100),
+            backgroundColor: top.map(row => row.gpm === null ? 'rgba(148,163,184,.34)' : row.gpm >= 0 ? 'rgba(16,185,129,.78)' : 'rgba(239,68,68,.80)'),
+	            borderColor: top.map(row => row.gpm === null ? '#94a3b8' : row.gpm >= 0 ? '#10b981' : '#ef4444'),
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions({ onlyPercent: true })
+      });
+    }
+
+    function renderCogsChart(sourceTotals) {
+      const entries = SOURCE_ORDER.map(source => ({ source, value: sourceTotals[source] || 0 }))
+        .filter(row => row.value !== 0);
+      makeChart('cogsChart', {
+        type: 'doughnut',
+        data: {
+          labels: entries.map(row => SOURCE_LABEL[row.source]),
+          datasets: [{
+            data: entries.map(row => Math.abs(row.value)),
+            backgroundColor: entries.map(row => SOURCE_COLOR[row.source]),
+	            borderColor: '#132042',
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+	        plugins: {
+	          legend: { position: 'bottom', labels: { color: '#f8fafc', boxWidth: 12, font: { weight: 'bold' } } },
+            tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatMoney(entries[ctx.dataIndex].value)}` } }
+          }
+        }
+      });
+    }
+
+    function renderSummaryTable(rows, total) {
+      document.getElementById('summaryPill').textContent = `${rows.length} portofolio`;
+      document.getElementById('summaryRows').innerHTML = rows.map(row => summaryRowHtml(row)).join('');
+      document.getElementById('summaryTotal').innerHTML = summaryRowHtml({ ...total, name: 'TOTAL' }, true);
+    }
+
+    function renderRkapTable(records) {
+      const branchRows = buildRkapBranchRows(records);
+      const portfolioRows = buildRkapPortfolioRows(records);
+      const total = branchRows.reduce((acc, row) => {
+        acc.revenue += row.revenue;
+        acc.target += row.target;
+        return acc;
+      }, { revenue: 0, target: 0 });
+      total.diff = total.revenue - total.target;
+      total.ach = total.target ? total.revenue / total.target : null;
+
+      document.getElementById('rkapPill').textContent = `${branchRows.length.toLocaleString('id-ID')} branch`;
+      document.getElementById('rkapRows').innerHTML = branchRows.map(rkapBranchRowHtml).join('') || `
+        <tr><td colspan="5">Tidak ada data RKAP sesuai filter.</td></tr>
+      `;
+      document.getElementById('rkapTotal').innerHTML = rkapRowHtml({
+        branch: 'TOTAL',
+        revenue: total.revenue,
+        target: total.target,
+        diff: total.diff,
+        ach: total.ach
+      }, true);
+
+      document.getElementById('rkapPortfolioPill').textContent = `${portfolioRows.length.toLocaleString('id-ID')} portofolio`;
+      document.getElementById('rkapPortfolioRows').innerHTML = portfolioRows.map(row => rkapRowHtml({ ...row, branch: row.portfolio })).join('') || `
+        <tr><td colspan="5">Tidak ada summary RKAP sesuai filter.</td></tr>
+      `;
+      document.getElementById('rkapPortfolioTotal').innerHTML = rkapRowHtml({
+        branch: 'TOTAL',
+        revenue: total.revenue,
+        target: total.target,
+        diff: total.diff,
+        ach: total.ach
+      }, true);
+    }
+
+    function buildRkapBranchRows(records) {
+      const selectedMonths = activeMonthOptions();
+      const map = {};
+
+      filteredRkapRecords(selectedMonths).forEach(row => {
+        const key = row.branch;
+        if (!map[key]) map[key] = emptyRkapRow(row.branch);
+        map[key].target += row.target;
+        addRkapPortfolio(map[key], row.portfolio, 0, row.target);
+      });
+
+      records.filter(row => row.type === 'REVENUE' && selectedMonths.includes(row.month)).forEach(row => {
+        const key = row.branch;
+        if (!map[key]) map[key] = emptyRkapRow(row.branch);
+        map[key].revenue += row.amount;
+        addRkapPortfolio(map[key], row.portfolio, row.amount, 0);
+      });
+
+      return Object.values(map).map(row => {
+        row.children = Object.values(row.children).map(finalizeRkapRow)
+          .sort((a, b) => b.revenue - a.revenue || b.target - a.target || a.portfolio.localeCompare(b.portfolio));
+        row.diff = row.revenue - row.target;
+        row.ach = row.target ? row.revenue / row.target : null;
+        return row;
+      }).sort((a, b) => {
+        return b.revenue - a.revenue || b.target - a.target || a.branch.localeCompare(b.branch);
+      });
+    }
+
+    function buildRkapPortfolioRows(records) {
+      const selectedMonths = activeMonthOptions();
+      const map = {};
+
+      filteredRkapRecords(selectedMonths).forEach(row => {
+        const key = row.portfolio;
+        if (!map[key]) map[key] = emptyRkapPortfolioRow(row.portfolio);
+        map[key].target += row.target;
+      });
+
+      records.filter(row => row.type === 'REVENUE' && selectedMonths.includes(row.month)).forEach(row => {
+        const key = row.portfolio;
+        if (!map[key]) map[key] = emptyRkapPortfolioRow(row.portfolio);
+        map[key].revenue += row.amount;
+      });
+
+      return Object.values(map).map(finalizeRkapRow)
+        .sort((a, b) => b.revenue - a.revenue || b.target - a.target || a.portfolio.localeCompare(b.portfolio));
+    }
+
+    function filteredRkapRecords(months) {
+      return rkapRecords.filter(row => {
+        if (filterValues.branch.length && !filterValues.branch.includes(row.branch)) return false;
+        if (filterValues.portfolio.length && !filterValues.portfolio.includes(row.portfolio)) return false;
+        if (months.length && !months.includes(row.month)) return false;
+        return true;
+      });
+    }
+
+    function emptyRkapRow(branch) {
+      return { branch, revenue: 0, target: 0, diff: 0, ach: null, children: {} };
+    }
+
+    function emptyRkapPortfolioRow(portfolio) {
+      return { portfolio, revenue: 0, target: 0, diff: 0, ach: null };
+    }
+
+    function addRkapPortfolio(branchRow, portfolio, revenue, target) {
+      const key = portfolio || '-';
+      if (!branchRow.children[key]) branchRow.children[key] = emptyRkapPortfolioRow(key);
+      branchRow.children[key].revenue += revenue;
+      branchRow.children[key].target += target;
+    }
+
+    function finalizeRkapRow(row) {
+      row.diff = row.revenue - row.target;
+      row.ach = row.target ? row.revenue / row.target : null;
+      return row;
+    }
+
+    function renderRecon() {
+      const rows = filteredReconRecords();
+      const matched = rows.filter(row => row.matchStatus === 'MATCHED').length;
+      const commOnly = rows.filter(row => row.matchStatus === 'COMM ONLY').length;
+      const mitraOnly = rows.filter(row => row.matchStatus === 'MITRA ONLY').length;
+
+      document.getElementById('reconTotal').textContent = rows.length.toLocaleString('id-ID');
+      document.getElementById('reconMatched').textContent = matched.toLocaleString('id-ID');
+      document.getElementById('reconCommOnly').textContent = commOnly.toLocaleString('id-ID');
+      document.getElementById('reconMitraOnly').textContent = mitraOnly.toLocaleString('id-ID');
+      const branches = buildReconBranches(rows);
+      document.getElementById('reconPill').textContent = `${branches.length.toLocaleString('id-ID')} branch · ${rows.length.toLocaleString('id-ID')} pekerjaan`;
+
+      document.getElementById('reconRows').innerHTML = branches.map(reconBranchHtml).join('') || `
+	        <tr><td colspan="8">Tidak ada data rekon sesuai filter.</td></tr>
+      `;
+    }
+
+	    function buildReconBranches(rows) {
+	      const branchMap = new Map();
+	      rows.forEach(row => {
+	        const comm = row.comm || {};
+	        const mitra = row.mitra || {};
+	        const branchText = [comm.branchesText, mitra.branchesText].filter(Boolean).join(' / ') || row.branch || '-';
+	        const branchKey = branchText || '-';
+	        if (!branchMap.has(branchKey)) {
+	          branchMap.set(branchKey, {
+	            branch: branchKey,
+	            rows: [],
+	            amountComm: 0,
+	            amountMitra: 0,
+	            amountDiff: 0,
+	            counts: { MATCHED: 0, 'COMM ONLY': 0, 'MITRA ONLY': 0 }
+	          });
+	        }
+	        const group = branchMap.get(branchKey);
+	        group.rows.push(row);
+	        group.amountComm += Number(comm.amount || 0);
+	        group.amountMitra += Number(mitra.amount || 0);
+	        group.amountDiff += Number(row.amountDiff || 0);
+	        if (group.counts[row.matchStatus] !== undefined) group.counts[row.matchStatus] += 1;
+	      });
+	      return Array.from(branchMap.values()).sort((a, b) => a.branch.localeCompare(b.branch));
+	    }
+
+	    function reconBranchHtml(branch) {
+	      const statusOrder = ['MATCHED', 'COMM ONLY', 'MITRA ONLY'];
+	      const groupsHtml = statusOrder.map(status => {
+	        const statusRows = branch.rows.filter(row => row.matchStatus === status);
+	        return reconStatusGroupHtml(status, statusRows);
+	      }).join('');
+
+	      return `
+	        <tr class="recon-branch-row">
+	          <td colspan="8">
+	            <details class="recon-branch">
+	              <summary>
+	                <span class="recon-branch-title">
+	                  <span>${escapeHtml(branch.branch)}</span>
+	                  <span class="recon-branch-metrics">
+	                    <span>${branch.rows.length.toLocaleString('id-ID')} pekerjaan</span>
+	                    <span>Matched ${branch.counts.MATCHED.toLocaleString('id-ID')}</span>
+	                    <span>Comm Only ${branch.counts['COMM ONLY'].toLocaleString('id-ID')}</span>
+	                    <span>Mitra Only ${branch.counts['MITRA ONLY'].toLocaleString('id-ID')}</span>
+	                    <span>Selisih ${formatMoney(branch.amountDiff)}</span>
+	                  </span>
+	                </span>
+	              </summary>
+	              <div class="recon-status-groups">${groupsHtml}</div>
+	            </details>
+	          </td>
+	        </tr>
+	      `;
+	    }
+
+	    function reconStatusGroupHtml(status, rows) {
+	      const badgeClass = status === 'MATCHED' ? 'matched' : status === 'COMM ONLY' ? 'comm' : 'mitra';
+	      const amountComm = rows.reduce((sum, row) => sum + Number((row.comm || {}).amount || 0), 0);
+	      const amountMitra = rows.reduce((sum, row) => sum + Number((row.mitra || {}).amount || 0), 0);
+	      const amountDiff = rows.reduce((sum, row) => sum + Number(row.amountDiff || 0), 0);
+	      return `
+	        <details class="recon-status-group" ${status === 'MATCHED' ? 'open' : ''}>
+	          <summary>
+	            <span class="recon-status-title">
+	              <span><span class="status-badge ${badgeClass}">${escapeHtml(status)}</span> ${rows.length.toLocaleString('id-ID')} pekerjaan</span>
+	              <span class="recon-branch-metrics">
+	                <span>Comm ${formatMoney(amountComm)}</span>
+	                <span>Mitra ${formatMoney(amountMitra)}</span>
+	                <span>Selisih ${formatMoney(amountDiff)}</span>
+	              </span>
+	            </span>
+	          </summary>
+	          <div class="recon-work-list">
+	            ${rows.map(reconWorkItemHtml).join('') || '<div class="recon-muted">Tidak ada pekerjaan pada status ini.</div>'}
+	          </div>
+	        </details>
+	      `;
+	    }
+
+	    function reconWorkItemHtml(row) {
+	      const comm = row.comm || {};
+	      const mitra = row.mitra || {};
+	      const monthText = [comm.monthsText, mitra.monthsText].filter(Boolean).join(' / ') || '-';
+	      return `
+	        <div class="recon-work-item">
+	          <div>
+	            <b>${escapeHtml(row.workName || '-')}</b>
+	            <div class="recon-muted">Key: ${escapeHtml(row.matchKey || '-')}</div>
+	            <div class="recon-muted">Comm ${comm.count || 0} row · Mitra ${mitra.count || 0} row</div>
+	          </div>
+	          <div>
+	            <div class="recon-work-label">Portofolio</div>
+	            <div class="recon-work-value">${escapeHtml(row.portfolio || '-')}</div>
+	          </div>
+	          <div>
+	            <div class="recon-work-label">Bulan</div>
+	            <div class="recon-work-value">${escapeHtml(monthText)}</div>
+	          </div>
+	          <div>
+	            <div class="recon-work-label">Comm</div>
+	            <div class="recon-work-value num-gold">${formatMoney(comm.amount || 0)}</div>
+	            <div class="recon-muted">${escapeHtml(comm.statusText || '-')}</div>
+	          </div>
+	          <div>
+	            <div class="recon-work-label">Mitra</div>
+	            <div class="recon-work-value num-red">${formatMoney(mitra.amount || 0)}</div>
+	            <div class="recon-muted">${escapeHtml(mitra.statusText || '-')}</div>
+	          </div>
+	          <div>
+	            <div class="recon-work-label">Selisih</div>
+	            <div class="recon-work-value ${row.amountDiff >= 0 ? 'num-green' : 'num-red'}">${formatMoney(row.amountDiff || 0)}</div>
+	          </div>
+	        </div>
+	      `;
+	    }
+
+	    function summaryRowHtml(row, footer = false) {
+	      const jasa = row.sources['JASA'] || 0;
+	      const materialStok = row.sources['MATERIAL STOK'] || 0;
+      const gpm = row.gpm === null ? (row.revenue ? row.gp / row.revenue : null) : row.gpm;
+      const tag = footer ? 'td' : 'td';
+      return `
+        <tr>
+          <${tag}>${escapeHtml(row.name)}</${tag}>
+          <${tag}>${formatMoney(row.revenue)}</${tag}>
+          <${tag}>${formatMoney(row.cogs)}</${tag}>
+          <${tag}>${formatMoney(row.sources['Gaji'] || 0)}</${tag}>
+          <${tag}>${formatMoney(row.sources['THR'] || 0)}</${tag}>
+          <${tag}>${formatMoney(row.sources['SPPD'] || 0)}</${tag}>
+          <${tag}>${formatMoney(row.sources['IF'] || 0)}</${tag}>
+	          <${tag}>${formatMoney(jasa)}</${tag}>
+	          <${tag} class="num-orange">${formatMoney(materialStok)}</${tag}>
+          <${tag} class="${row.gp >= 0 ? 'num-green' : 'num-red'}">${formatMoney(row.gp)}</${tag}>
+          <${tag} class="${gpm !== null && gpm >= 0 ? 'num-green' : 'num-red'}">${gpm === null ? 'N/A' : pct.format(gpm)}</${tag}>
+        </tr>
+      `;
+    }
+
+    function rkapRowHtml(row, footer = false) {
+      const tag = footer ? 'td' : 'td';
+      const achClass = row.ach === null ? '' : row.ach >= 1 ? 'num-green' : 'num-red';
+      return `
+        <tr>
+          <${tag}>${escapeHtml(row.branch || '-')}</${tag}>
+          <${tag}>${formatMoney(row.revenue)}</${tag}>
+          <${tag}>${formatMoney(row.target)}</${tag}>
+          <${tag} class="${row.diff >= 0 ? 'num-green' : 'num-red'}">${formatMoney(row.diff)}</${tag}>
+          <${tag} class="${achClass}">${row.ach === null ? 'N/A' : pct.format(row.ach)}</${tag}>
+        </tr>
+      `;
+    }
+
+    function rkapBranchRowHtml(row) {
+      const achClass = row.ach === null ? '' : row.ach >= 1 ? 'num-green' : 'num-red';
+      const children = row.children || [];
+      return `
+        <tr class="recon-branch-row">
+          <td colspan="5">
+            <details class="recon-branch">
+              <summary>
+                <span class="recon-branch-title">
+                  <span>${escapeHtml(row.branch || '-')}</span>
+                  <span class="recon-branch-metrics">
+                    <span>${children.length.toLocaleString('id-ID')} portofolio</span>
+                    <span>Revenue ${formatMoney(row.revenue)}</span>
+                    <span>RKAP ${formatMoney(row.target)}</span>
+                    <span>Selisih ${formatMoney(row.diff)}</span>
+                    <span class="${achClass}">ACH ${row.ach === null ? 'N/A' : pct.format(row.ach)}</span>
+                  </span>
+                </span>
+              </summary>
+              <div class="recon-work-list">
+                ${children.map(rkapPortfolioItemHtml).join('') || '<div class="recon-muted">Tidak ada detail portofolio.</div>'}
+              </div>
+            </details>
+          </td>
+        </tr>
+      `;
+    }
+
+    function rkapPortfolioItemHtml(row) {
+      const achClass = row.ach === null ? '' : row.ach >= 1 ? 'num-green' : 'num-red';
+      return `
+        <div class="recon-work-item">
+          <div>
+            <b>${escapeHtml(row.portfolio || '-')}</b>
+            <div class="recon-muted">Detail RKAP dalam branch terpilih</div>
+          </div>
+          <div>
+            <div class="recon-work-label">Revenue</div>
+            <div class="recon-work-value num-gold">${formatMoney(row.revenue)}</div>
+          </div>
+          <div>
+            <div class="recon-work-label">RKAP</div>
+            <div class="recon-work-value">${formatMoney(row.target)}</div>
+          </div>
+          <div>
+            <div class="recon-work-label">Selisih</div>
+            <div class="recon-work-value ${row.diff >= 0 ? 'num-green' : 'num-red'}">${formatMoney(row.diff)}</div>
+          </div>
+          <div>
+            <div class="recon-work-label">ACH</div>
+            <div class="recon-work-value ${achClass}">${row.ach === null ? 'N/A' : pct.format(row.ach)}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function makeChart(id, config) {
+      if (charts[id]) charts[id].destroy();
+      charts[id] = new Chart(document.getElementById(id), config);
+    }
+
+    function chartOptions(opts = {}) {
+      const xTicks = {
+        color: '#94a3b8',
+        font: { weight: 'bold' },
+        maxRotation: 24,
+        minRotation: 0
+      };
+      const yTicks = {
+        color: '#94a3b8',
+        font: opts.horizontal ? { weight: 'bold' } : undefined
+      };
+      if (opts.horizontal) xTicks.callback = value => moneyAxis(value);
+      if (!opts.horizontal) yTicks.callback = value => opts.onlyPercent ? `${value}%` : moneyAxis(value);
+
+      const scales = {
+        x: {
+	          grid: { color: 'rgba(255,255,255,.08)' },
+	          stacked: !!opts.stacked,
+	          ticks: xTicks
+        },
+        y: {
+	          grid: { color: 'rgba(255,255,255,.10)' },
+          stacked: !!opts.stacked,
+          ticks: yTicks
+        }
+      };
+      if (opts.percentAxis) {
+        scales.y1 = {
+          position: 'right',
+          grid: { drawOnChartArea: false },
+	          ticks: { color: '#06b6d4', callback: value => `${value}%` }
+        };
+      }
+      const interaction = opts.preciseHover
+        ? { mode: 'nearest', intersect: true }
+        : { mode: 'index', intersect: false };
+      return {
+        indexAxis: opts.horizontal ? 'y' : 'x',
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: interaction,
+        hover: interaction,
+	        plugins: {
+	          legend: { position: 'bottom', labels: { color: '#f8fafc', boxWidth: 12, font: { weight: 'bold' } } },
+          tooltip: {
+            position: opts.preciseHover ? 'nearest' : 'average',
+            callbacks: {
+              label: ctx => {
+                const isPercent = ctx.dataset.yAxisID === 'y1' || opts.onlyPercent;
+                return `${ctx.dataset.label}: ${isPercent ? Number(ctx.raw).toFixed(2) + '%' : formatMoney(ctx.raw)}`;
+              }
+            }
+          }
+        },
+        scales
+      };
+    }
+
+    function formatMoney(value) {
+      const n = Number(value || 0);
+      if (!n) return 'Rp 0';
+      return rupiah.format(n).replace(/\s/g, ' ');
+    }
+
+    function moneyCompact(value) {
+      const n = Number(value || 0);
+      const sign = n < 0 ? '-' : '';
+      const abs = Math.abs(n);
+      if (abs >= 1e9) return `${sign}Rp ${(abs / 1e9).toFixed(2)} Miliar`;
+      if (abs >= 1e6) return `${sign}Rp ${(abs / 1e6).toFixed(2)} Juta`;
+      if (abs >= 1e3) return `${sign}Rp ${(abs / 1e3).toFixed(1)} Ribu`;
+      return `${sign}Rp ${abs.toLocaleString('id-ID')}`;
+    }
+
+    function moneyAxis(value) {
+      const abs = Math.abs(Number(value || 0));
+      if (abs >= 1e9) return `${(Number(value) / 1e9).toFixed(0)} Miliar`;
+      if (abs >= 1e6) return `${(Number(value) / 1e6).toFixed(0)} Juta`;
+      return Number(value || 0).toLocaleString('id-ID');
+    }
+
+	    function portfolioColor(name) {
+		      const palette = ['#6366f1', '#06b6d4', '#ef4444', '#3b82f6', '#ec4899', '#8b5cf6', '#f59e0b'];
+	      let hash = 0;
+	      String(name || '').split('').forEach(ch => hash = (hash + ch.charCodeAt(0)) % palette.length);
+	      return palette[hash];
+	    }
+
+	    function hashString(value) {
+	      let hash = 0;
+	      String(value || '').split('').forEach(ch => {
+	        hash = ((hash << 5) - hash) + ch.charCodeAt(0);
+	        hash |= 0;
+	      });
+	      return hash;
+	    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[char]));
+    }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

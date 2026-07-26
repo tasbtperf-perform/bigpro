@@ -1,0 +1,3102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MNC Weather - STO Monitoring Dashboard</title>
+    
+    
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.position = 'fixed';
+            errorDiv.style.top = '0';
+            errorDiv.style.left = '0';
+            errorDiv.style.width = '100%';
+            errorDiv.style.backgroundColor = '#ef4444';
+            errorDiv.style.color = '#ffffff';
+            errorDiv.style.padding = '1.5rem';
+            errorDiv.style.zIndex = '999999';
+            errorDiv.style.fontFamily = 'monospace';
+            errorDiv.style.fontSize = '0.95rem';
+            errorDiv.style.whiteSpace = 'pre-wrap';
+            errorDiv.style.boxShadow = '0 4px 10px rgba(0,0,0,0.3)';
+            errorDiv.innerHTML = '<strong>JS Runtime Error Detected:</strong><br>' + message + '<br><br>Source: ' + source + '<br>Line: ' + lineno + ':' + colno;
+            document.body.appendChild(errorDiv);
+            return false;
+        };
+    </script>
+    
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <style>
+        
+        :root {
+            
+            --bg-main: #0b1329;
+            --bg-card: rgba(18, 28, 56, 0.75);
+            --bg-card-solid: #132042;
+            --bg-card-hover: rgba(26, 40, 78, 0.9);
+            --bg-body: rgba(26, 40, 78, 0.9);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(99, 102, 241, 0.3);
+
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --color-error: #ef4444;
+
+            
+            --color-accent: #6366f1;
+            --color-accent-rgb: 99, 102, 241;
+            --gradient-accent: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+
+            
+            --color-batam: #3b82f6;
+            --color-bukittinggi: #10b981;
+            --color-dumai: #8b5cf6;
+            --color-padang: #f59e0b;
+            --color-pekanbaru: #ef4444;
+
+            
+            --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+            
+            --header-height: 70px;
+            --sidebar-width: 420px;
+
+            
+            --shadow-premium: 0 8px 24px rgba(0, 0, 0, 0.25);
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.25);
+            --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.35);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100% !important;
+            width: 100% !important;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 14px;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        
+        .app-header {
+            height: var(--header-height);
+            background: rgba(11, 19, 41, 0.85);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 1000;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            color: var(--color-accent);
+            filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.2));
+            animation: pulseGlow 3s infinite ease-in-out;
+        }
+
+        .logo-text h1 {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #f8fafc;
+        }
+
+        .logo-text span {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .live-time {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .live-time i {
+            width: 14px;
+            height: 14px;
+            color: var(--color-accent);
+        }
+
+        .data-source-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulseGreen 2s infinite;
+        }
+
+        
+        .dashboard-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            height: calc(100% - var(--header-height));
+            overflow-y: auto;
+            position: relative;
+        }
+
+        
+        .map-section {
+            width: 100%;
+            height: 580px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid var(--border-color);
+            background: #0b1329;
+        }
+
+        .map-wrapper {
+            flex: 1;
+            position: relative;
+            width: 100%;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            background-color: #0b1329;
+        }
+
+        
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 999;
+            width: 320px;
+            pointer-events: auto;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg-card-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.6rem 1rem;
+            box-shadow: var(--shadow-premium);
+            transition: var(--transition-smooth);
+        }
+
+        .search-box:focus-within {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+        }
+
+        .search-box i {
+            width: 18px;
+            height: 18px;
+            color: var(--text-secondary);
+            margin-right: 0.75rem;
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            width: 100%;
+            font-family: var(--font-body);
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        
+        .legend-panel {
+            background: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .legend-panel h3 {
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.75px;
+            color: var(--text-secondary);
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            transition: var(--transition-smooth);
+            border: 1px solid transparent;
+        }
+
+        .legend-item:hover {
+            background: rgba(255, 255, 255, 0.02);
+            border-color: var(--border-color);
+        }
+
+        .legend-item.dimmed {
+            opacity: 0.35;
+        }
+
+        .legend-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .legend-count {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            margin-left: 0.15rem;
+        }
+
+        
+        .sidebar-section {
+            width: 100%;
+            height: auto;
+            background: var(--bg-card);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: var(--transition-smooth);
+            box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.02);
+            border-top: 1px solid var(--border-color);
+        }
+
+        
+        .sidebar-section::-webkit-scrollbar,
+        .timeline-scroll-container::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .sidebar-section::-webkit-scrollbar-track,
+        .timeline-scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar-section::-webkit-scrollbar-thumb,
+        .timeline-scroll-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+        }
+
+        .sidebar-section::-webkit-scrollbar-thumb:hover,
+        .timeline-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        
+        .sidebar-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px;
+            padding: 4rem 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.05);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            box-shadow: inset 0 0 15px rgba(99, 102, 241, 0.02);
+        }
+
+        .empty-icon {
+            width: 36px;
+            height: 36px;
+            color: var(--color-accent);
+        }
+
+        .sidebar-empty h2 {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .sidebar-empty p {
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        
+        .sidebar-main {
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 2.5rem;
+            align-items: start;
+        }
+
+        
+        .weather-meta-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: sticky;
+            top: 310px; 
+            z-index: 99;
+        }
+
+        .weather-meta-col .summary-cards-grid {
+            flex-direction: column;
+            overflow-x: visible;
+        }
+
+        .weather-meta-col .metric-card {
+            flex: 1 1 auto;
+            width: 100%;
+        }
+
+        .weather-forecast-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            min-width: 0; 
+        }
+
+        .weather-forecast-col .date-filter-container {
+            max-width: 350px;
+        }
+
+        
+        .hidden {
+            display: none !important;
+        }
+
+        
+        .sto-info-header {
+            background: rgba(255, 255, 255, 0.012);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sto-info-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gradient-accent);
+        }
+
+        .sto-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--color-accent);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            width: fit-content;
+            margin-bottom: 0.4rem;
+        }
+
+        .sto-info-header h2 {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .sto-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-item.full-width {
+            grid-column: span 2;
+        }
+
+        .meta-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .meta-val {
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            margin-top: 0.1rem;
+        }
+
+        .font-semibold {
+            font-weight: 600;
+        }
+
+        .code-font {
+            font-family: monospace;
+            color: var(--color-accent);
+        }
+
+        
+        .date-filter-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .filter-title {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .date-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            background: rgba(255, 255, 255, 0.03);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .date-tab-btn {
+            background: transparent;
+            border: none;
+            padding: 0.4rem 0.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-secondary);
+            transition: var(--transition-smooth);
+        }
+
+        .date-tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .date-tab-btn.active {
+            background: var(--gradient-accent);
+            color: var(--text-primary);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .tab-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .tab-date {
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-top: 0.1rem;
+        }
+
+        
+        .sidebar-loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 0;
+            gap: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(99, 102, 241, 0.1);
+            border-top-color: var(--color-accent);
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+        }
+
+        
+        .summary-cards-grid {
+            display: flex;
+            flex-direction: row;
+            overflow-x: auto;
+            gap: 0.75rem;
+            padding-bottom: 0.4rem;
+            width: 100%;
+            scrollbar-width: thin;
+        }
+
+        .metric-card {
+            flex: 0 0 calc(50% - 0.375rem);
+            min-width: 185px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            transition: var(--transition-smooth);
+        }
+
+        .metric-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-glow);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-icon {
+            width: 15px;
+            height: 15px;
+            color: var(--color-accent);
+        }
+
+        .aqi-score-container,
+        .uv-score-container {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+
+        .metric-value {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
+            font-weight: 800;
+            line-height: 1;
+            color: var(--text-primary);
+        }
+
+        .status-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0.15rem 0.35rem;
+            border-radius: 4px;
+        }
+
+        .metric-subtext {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .aqi-advisory-box {
+            background: rgba(255, 255, 255, 0.015);
+            border-radius: 8px;
+            padding: 0.5rem;
+            border-left: 3px solid var(--color-accent);
+        }
+
+        .aqi-advisory-box strong {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-primary);
+            margin-bottom: 0.15rem;
+        }
+
+        .aqi-advisory-box p {
+            font-size: 0.65rem;
+            line-height: 1.3;
+            color: var(--text-secondary);
+        }
+
+        
+        .uv-bar-wrapper {
+            height: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+        }
+
+        .uv-bar-fill {
+            height: 100%;
+            background: var(--gradient-accent);
+            border-radius: 3px;
+            transition: width 1s ease-in-out;
+        }
+
+        
+        .timeline-section {
+            margin-top: 0.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timeline-header h3 {
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .temp-range-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid var(--border-color);
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            color: var(--text-secondary);
+        }
+
+        .timeline-scroll-container {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--bg-card);
+        }
+
+        
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.01);
+        }
+
+        .weather-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-family: var(--font-body);
+        }
+
+        .weather-table th {
+            background-color: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .weather-table td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        .weather-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .weather-table-row {
+            transition: var(--transition-smooth);
+        }
+
+        .weather-table-row:hover {
+            background-color: var(--bg-card-hover);
+        }
+
+        .weather-table .time-cell {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .weather-table .icon-cell {
+            width: 50px;
+            text-align: center;
+        }
+
+        .weather-table .icon-cell img,
+        .weather-table .icon-cell i {
+            vertical-align: middle;
+        }
+
+        .weather-table .icon-cell i {
+            width: 18px;
+            height: 18px;
+            color: var(--color-accent);
+            display: inline-block;
+        }
+
+        .weather-table .condition-cell {
+            font-weight: 500;
+        }
+
+        .weather-table .temp-cell {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .weather-table .humidity-cell {
+            color: #06b6d4;
+        }
+
+        .table-droplet-icon {
+            width: 14px;
+            height: 14px;
+            color: #06b6d4;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 0.25rem;
+        }
+
+        .timeline-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timeline-row {
+            display: grid;
+            grid-template-columns: 60px 40px 1fr 60px 45px;
+            align-items: center;
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: var(--transition-smooth);
+        }
+
+        .timeline-row:last-child {
+            border-bottom: none;
+        }
+
+        .timeline-row:hover {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .time-cell {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .icon-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-cell i {
+            width: 18px;
+            height: 18px;
+            color: var(--color-accent);
+        }
+
+        .condition-cell {
+            font-size: 0.75rem;
+            color: var(--text-primary);
+            padding-left: 0.4rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .temp-cell {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-align: right;
+        }
+
+        .humidity-cell {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: right;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.15rem;
+        }
+
+        .humidity-cell i {
+            width: 10px;
+            height: 10px;
+        }
+
+        
+        .leaflet-tooltip-pane .sto-tooltip {
+            background: var(--bg-card-solid) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            padding: 0.4rem 0.8rem !important;
+            color: var(--text-primary) !important;
+            font-family: var(--font-heading) !important;
+            font-size: 0.8rem !important;
+            font-weight: 600 !important;
+            box-shadow: var(--shadow-premium) !important;
+        }
+
+        .leaflet-tooltip-right::before {
+            border-right-color: var(--bg-card-solid) !important;
+        }
+
+        .leaflet-tooltip-left::before {
+            border-left-color: var(--bg-card-solid) !important;
+        }
+
+        .leaflet-control-zoom {
+            border: 1px solid var(--border-color) !important;
+            box-shadow: var(--shadow-premium) !important;
+        }
+
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out {
+            background: var(--bg-card-solid) !important;
+            color: var(--text-primary) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+        }
+
+        .leaflet-control-zoom-in:hover,
+        .leaflet-control-zoom-out:hover {
+            background: var(--bg-card-hover) !important;
+            color: var(--color-accent) !important;
+        }
+
+        .leaflet-control-attribution {
+            background: rgba(11, 19, 41, 0.85) !important;
+            color: var(--text-muted) !important;
+            font-size: 0.65rem !important;
+        }
+
+        .leaflet-control-attribution a {
+            color: var(--color-accent) !important;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                filter: drop-shadow(0 0 3px rgba(99, 102, 241, 0.2));
+            }
+            50% {
+                filter: drop-shadow(0 0 7px rgba(99, 102, 241, 0.4));
+            }
+        }
+
+        @keyframes pulseGreen {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .animate-bounce {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+                animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+            }
+            50% {
+                transform: translateY(-25%);
+                animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+            }
+        }
+
+        
+        @keyframes weather-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes weather-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        @keyframes weather-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+        }
+
+        @keyframes weather-drift {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(4px); }
+        }
+
+        
+        .anim-spin img,
+        .anim-spin i {
+            animation: weather-spin 12s infinite linear;
+        }
+
+        .anim-bounce img,
+        .anim-bounce i {
+            animation: weather-bounce 2s infinite ease-in-out;
+            display: inline-block;
+        }
+
+        .anim-pulse img,
+        .anim-pulse i {
+            animation: weather-pulse 3s infinite ease-in-out;
+            display: inline-block;
+        }
+
+        .anim-drift img,
+        .anim-drift i {
+            animation: weather-drift 4s infinite ease-in-out;
+            display: inline-block;
+        }
+
+        .weather-table-row:hover .icon-cell img,
+        .weather-table-row:hover .icon-cell i {
+            transform: scale(1.2);
+            filter: drop-shadow(0px 2px 5px rgba(99, 102, 241, 0.3));
+        }
+
+        @media (max-width: 768px) {
+            .app-header {
+                padding: 0 1rem;
+            }
+            
+            .header-logo .logo-text span {
+                display: none;
+            }
+            
+            .live-time {
+                display: none;
+            }
+            
+            .dashboard-content {
+                flex-direction: column;
+            }
+            
+            .map-section {
+                height: 480px; 
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .legend-panel {
+                padding: 0.75rem 1rem;
+            }
+            
+            .legend-items {
+                gap: 0.75rem;
+            }
+            
+            .map-controls {
+                width: calc(100% - 40px);
+            }
+            
+            .sidebar-section {
+                width: 100%;
+                height: auto;
+                box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.05);
+            }
+
+            .sidebar-main {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                padding: 1.5rem 1rem;
+            }
+
+            .weather-meta-col {
+                position: static;
+            }
+
+            .branch-summary-container {
+                margin: 1rem 1rem 0.5rem 1rem;
+            }
+        }
+
+        
+        .branch-summary-container {
+            display: flex;
+            gap: 1rem;
+            margin: 1.25rem 1.5rem 0.5rem 1.5rem;
+            overflow-x: auto;
+            padding: 0.25rem 0.25rem 0.5rem 0.25rem;
+            scrollbar-width: thin;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .branch-summary-container::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .branch-summary-container::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .branch-summary-card {
+            flex: 1;
+            min-width: 220px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .branch-summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .branch-summary-card.dimmed {
+            opacity: 0.45;
+            filter: grayscale(40%);
+            border-style: dashed;
+        }
+
+        .branch-summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .branch-summary-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: var(--text-primary);
+        }
+
+        .branch-summary-count {
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: var(--bg-body);
+            padding: 2px 8px;
+            border-radius: 99px;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .branch-summary-body {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .weather-count-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.35rem 0.25rem;
+            border-radius: 8px;
+            background: var(--bg-body);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+
+        .weather-count-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .weather-count-icon {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .weather-count-label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .weather-count-value {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .branch-summary-loading {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .branch-summary-loading .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(99, 102, 241, 0.1);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+        }
+
+        
+        .consolidated-table-container {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-sm);
+            margin-top: 0.5rem;
+        }
+
+        .consolidated-table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.01);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .consolidated-table-header .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .consolidated-table-header .header-icon {
+            color: var(--color-accent);
+            width: 20px;
+            height: 20px;
+        }
+
+        .consolidated-table-header h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .consolidated-date-tabs {
+            display: flex;
+            background: var(--bg-body);
+            padding: 3px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .con-date-tab {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 6px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .con-date-tab.active {
+            background: var(--bg-card);
+            color: var(--color-accent);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .consolidated-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            position: relative;
+            scrollbar-width: thin;
+        }
+
+        .consolidated-weather-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.8rem;
+        }
+
+        .consolidated-weather-table th {
+            background: var(--bg-body);
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        
+        .consolidated-weather-table th:first-child,
+        .consolidated-weather-table td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            background: var(--bg-card);
+            border-right: 2px solid var(--border-color);
+            min-width: 180px;
+            max-width: 250px;
+        }
+
+        .consolidated-weather-table tr:hover td:first-child {
+            background: var(--bg-body);
+        }
+
+        .consolidated-weather-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        
+        .sa-row {
+            background: rgba(255, 255, 255, 0.02);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .sa-row:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sa-row td {
+            padding: 0.85rem 1rem !important;
+        }
+
+        .sa-cell-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: flex-start;
+        }
+
+        .sa-title-row {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            letter-spacing: 0.02em;
+        }
+
+        .sa-recap-text {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding-left: 24px;
+            white-space: normal;
+            max-width: 220px;
+            text-align: left;
+        }
+
+        .sa-chevron {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .sa-row:not(.collapsed) .sa-chevron {
+            transform: rotate(90deg);
+            color: var(--color-accent);
+        }
+
+        .sa-sto-count {
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        
+        .sto-row {
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+
+        .sto-row:hover {
+            background: var(--bg-body);
+        }
+
+        .sto-row.hidden {
+            display: none;
+        }
+
+        .sto-row.highlight-row {
+            background: rgba(99, 102, 241, 0.15) !important;
+        }
+
+        .sto-row.highlight-row td:first-child {
+            background: rgba(99, 102, 241, 0.2) !important;
+            font-weight: 700;
+            color: var(--color-accent);
+        }
+
+        .sto-name-cell {
+            padding-left: 2rem !important; 
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .weather-hour-cell {
+            text-align: center;
+            font-size: 1.1rem;
+            cursor: default;
+        }
+
+        .table-loading-overlay {
+            width: 100%;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .table-loading-overlay .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid rgba(99, 102, 241, 0.1);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+        }
+
+        .emoji-wrapper {
+            display: inline-block;
+            font-size: 1.25rem;
+            transition: transform 0.2s;
+        }
+
+        
+        .weather-gray-overcast {
+            filter: grayscale(1) brightness(0.85);
+        }
+        .weather-gray-drizzle {
+            filter: grayscale(0.8) brightness(0.7) contrast(1.1);
+        }
+        .weather-gray-modrain {
+            filter: grayscale(0.9) brightness(0.55) contrast(1.2);
+        }
+        .weather-gray-heavyrain {
+            filter: grayscale(1) brightness(0.4) contrast(1.3);
+        }
+        .weather-gray-storm {
+            filter: grayscale(0.8) brightness(0.35) contrast(1.4) drop-shadow(0 0 2px rgba(234, 179, 8, 0.45));
+        }
+
+        
+        .branch-header-row {
+            background: rgba(99, 102, 241, 0.05);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .branch-header-row td {
+            padding: 0.75rem 1.25rem !important;
+            cursor: default;
+        }
+
+        .branch-header-content {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .branch-indicator {
+            width: 4px;
+            height: 16px;
+            border-radius: 2px;
+        }
+
+        .branch-header-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: var(--text-primary);
+            text-transform: uppercase;
+        }
+
+        .emoji-wrapper.anim-spin {
+            animation: weather-spin 12s infinite linear;
+        }
+
+        .emoji-wrapper.anim-bounce {
+            animation: weather-bounce 2s infinite ease-in-out;
+        }
+
+        .emoji-wrapper.anim-pulse {
+            animation: weather-pulse 3s infinite ease-in-out;
+        }
+
+        .emoji-wrapper.anim-drift {
+            animation: weather-drift 4s infinite ease-in-out;
+        }
+
+        
+        .weather-cell-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 2px 0;
+        }
+
+        .weather-desc-text {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        
+        .weather-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .weather-modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .weather-modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: var(--shadow-lg);
+            transform: scale(0.9);
+            transition: transform 0.25s ease;
+            overflow: hidden;
+        }
+
+        .weather-modal.open .weather-modal-content {
+            transform: scale(1);
+        }
+
+        .weather-modal .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .weather-modal .modal-header h4 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .weather-modal .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .weather-modal .modal-close:hover {
+            color: var(--color-error);
+        }
+
+        .weather-modal .modal-body {
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .modal-weather-icon-large {
+            font-size: 3.5rem;
+        }
+
+        .modal-weather-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .modal-weather-time {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            background: var(--bg-body);
+            padding: 4px 12px;
+            border-radius: 99px;
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-weather-details {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        
+        <header class="app-header" style="justify-content:flex-end;">
+            <div class="header-meta">
+                <div class="live-time" id="live-time">
+                    <i data-lucide="clock"></i>
+                    <span id="current-time-text">Loading time...</span>
+                </div>
+                <div class="data-source-badge">
+                    <span class="pulse-dot"></span>
+                    Live Data: BMKG & Google Sheets
+                </div>
+            </div>
+        </header>
+
+        
+        <main class="dashboard-content">
+            
+            <div class="branch-summary-container" id="branch-summary-container">
+                <div class="branch-summary-loading">
+                    <span class="spinner"></span>
+                    Analyzing weather for all STOs per Branch...
+                </div>
+            </div>
+
+            
+            <section class="map-section">
+                <div class="map-wrapper">
+                    <div id="map"></div>
+                    
+                    
+                    <div class="map-controls">
+                        <div class="search-box">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="sto-search" placeholder="Search STO name or Branch...">
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="legend-panel">
+                    <h3>STO DISTRIBUTION BY BRANCH</h3>
+                    <div class="legend-items" id="legend-items">
+                        
+                    </div>
+                </div>
+            </section>
+
+            
+            <aside class="sidebar-section" id="sidebar">
+                
+                <div class="consolidated-table-container">
+                    <div class="consolidated-table-header">
+                        <div class="header-left">
+                            <i data-lucide="table" class="header-icon"></i>
+                            <h3>Hourly Weather Forecast for All STOs by Service Area (SA)</h3>
+                        </div>
+                        <div class="consolidated-date-tabs" id="consolidated-date-tabs">
+                            <button class="con-date-tab active" data-day="today" id="con-tab-today">Today</button>
+                            <button class="con-date-tab" data-day="tomorrow" id="con-tab-tomorrow">Tomorrow</button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive consolidated-table-wrapper" id="consolidated-table-wrapper">
+                        
+                        <div class="table-loading-overlay" id="table-loading-overlay">
+                            <span class="spinner"></span>
+                            <span>Preparing weather forecast table for all STOs...</span>
+                        </div>
+                        
+                        
+                        <table class="consolidated-weather-table hidden" id="consolidated-weather-table">
+                            <thead>
+                                <tr id="consolidated-table-headers">
+                                    <th>Service Area / STO</th>
+                                    
+                                </tr>
+                            </thead>
+                            <tbody id="consolidated-table-body">
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            var EMBEDDED_STO_DATA = [{"witel": "REGIONAL I", "cluster": "AGAM", "name": "BSO", "province": "SUMATERA BARAT", "lat": -0.286719464, "lon": 100.4599585, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "SOLOK SAWAH LUNTO", "name": "TLN", "province": "SUMATERA BARAT", "lat": -0.927814, "lon": 100.635246, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "KAI", "province": "KEPULAUAN RIAU", "lat": 1.115294281, "lon": 104.1357487, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "LBA", "province": "SUMATERA BARAT", "lat": -0.681297551, "lon": 100.2874893, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "DGS", "province": "KEPULAUAN RIAU", "lat": 1.123617379, "lon": 103.9417818, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "MIN", "province": "SUMATERA BARAT", "lat": -0.298923694, "lon": 100.2254329, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "TKU", "province": "SUMATERA BARAT", "lat": -0.401049737, "lon": 99.92280613, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "SOLOK SAWAH LUNTO", "name": "MLH", "province": "SUMATERA BARAT", "lat": -1.490675311, "lon": 101.0633495, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "PAYAKUMBUH", "name": "LIN", "province": "SUMATERA BARAT", "lat": -0.450576972, "lon": 100.7527, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "PASAMAN", "name": "LBS", "province": "SUMATERA BARAT", "lat": 0.120027981, "lon": 100.173972, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "SOLOK SAWAH LUNTO", "name": "TWI", "province": "SUMATERA BARAT", "lat": -0.601987041, "lon": 100.737981, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "ROKAN HILIR", "name": "BAG", "province": "RIAU", "lat": 2.158969041, "lon": 100.8074906, "branch": "DUMAI"}, {"witel": "REGIONAL I", "cluster": "PEKANBARU", "name": "BKR", "province": "RIAU", "lat": 0.438728822, "lon": 101.4528637, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "SOLOK SAWAH LUNTO", "name": "SLK", "province": "SUMATERA BARAT", "lat": -0.788649994, "lon": 100.65465, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "KOTA PADANG", "name": "LIM", "province": "SUMATERA BARAT", "lat": -0.920570565, "lon": 100.4633319, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "INDRAGIRI HILIR", "name": "KLE", "province": "RIAU", "lat": -0.513035569, "lon": 103.378896, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "SLU", "province": "KEPULAUAN RIAU", "lat": 1.045987161, "lon": 103.9551345, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "BTC", "province": "KEPULAUAN RIAU", "lat": 1.115170597, "lon": 104.0504038, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "MENTAWAI DAN PESISIR", "name": "TRS", "province": "SUMATERA BARAT", "lat": -1.243218041, "lon": 100.479463, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "KOTA PADANG", "name": "PSB", "province": "SUMATERA BARAT", "lat": -1.303386939, "lon": 100.5112991, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "TANJUNG PINANG", "name": "DBS", "province": "KEPULAUAN RIAU", "lat": -0.486495561, "lon": 104.5544949, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "KYT", "province": "SUMATERA BARAT", "lat": -0.543338, "lon": 100.336087, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "SOLOK SAWAH LUNTO", "name": "PNB", "province": "SUMATERA BARAT", "lat": -0.274682042, "lon": 100.717529, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "SOLOK SAWAH LUNTO", "name": "SLN", "province": "SUMATERA BARAT", "lat": -0.729167, "lon": 100.756943, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "SKN", "province": "KEPULAUAN RIAU", "lat": 1.112532697, "lon": 103.9500421, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "KMN", "province": "SUMATERA BARAT", "lat": -0.223265479, "lon": 100.4160015, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "PELALAWAN", "name": "SOK", "province": "RIAU", "lat": 0.156350929, "lon": 102.0677317, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "ROKAN HULU", "name": "UBT", "province": "RIAU", "lat": 0.711718, "lon": 100.533182, "branch": "DUMAI"}, {"witel": "REGIONAL I", "cluster": "PEKANBARU", "name": "ARK", "province": "RIAU", "lat": 0.466269498, "lon": 101.4189213, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "SIAK MERANTI", "name": "SAK", "province": "RIAU", "lat": 0.794644394, "lon": 102.0523233, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "PRS", "province": "SUMATERA BARAT", "lat": -0.735610984, "lon": 100.312776, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "KOTA PADANG", "name": "BDT", "province": "SUMATERA BARAT", "lat": -0.95013, "lon": 100.42168, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "TBK", "province": "KEPULAUAN RIAU", "lat": 0.990239384, "lon": 103.4388577, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "MOR", "province": "KEPULAUAN RIAU", "lat": 0.761543308, "lon": 103.7063972, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "TANJUNG PINANG", "name": "TER", "province": "KEPULAUAN RIAU", "lat": 3.2234, "lon": 106.2236, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "PAYAKUMBUH", "name": "SIR", "province": "SUMATERA BARAT", "lat": -0.413333333, "lon": 100.5663889, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "SIJUNJUNG DHARMASRAYA", "name": "PDS", "province": "SUMATERA BARAT", "lat": -0.69041966, "lon": 100.8272471, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "BLP", "province": "KEPULAUAN RIAU", "lat": 1.15441, "lon": 103.88903, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "SOLOK SAWAH LUNTO", "name": "SLA", "province": "SUMATERA BARAT", "lat": -0.634444, "lon": 100.622498, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "PAYAKUMBUH", "name": "PDJ", "province": "SUMATERA BARAT", "lat": -0.111289002, "lon": 100.537429, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "KOTA PADANG", "name": "TLB", "province": "SUMATERA BARAT", "lat": -0.982965101, "lon": 100.391667, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "INDRAGIRI HULU", "name": "PMB", "province": "RIAU", "lat": -0.382638225, "lon": 102.4416738, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "SIJUNJUNG DHARMASRAYA", "name": "SGD", "province": "SUMATERA BARAT", "lat": -0.966055971, "lon": 101.506098, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "SLM", "province": "SUMATERA BARAT", "lat": -0.514433672, "lon": 100.052461, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "NGS", "province": "KEPULAUAN RIAU", "lat": 1.156101351, "lon": 104.1218952, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "PASAMAN", "name": "SPE", "province": "SUMATERA BARAT", "lat": 0.093537225, "lon": 99.82611948, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "KUANTAN", "name": "TAK", "province": "RIAU", "lat": -0.534476492, "lon": 101.5582331, "branch": "DUMAI"}, {"witel": "REGIONAL I", "cluster": "SIAK MERANTI", "name": "MIS", "province": "RIAU", "lat": 0.736349175, "lon": 101.449227, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "SGT", "province": "KEPULAUAN RIAU", "lat": 0.422058835, "lon": 103.5440825, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "KOTA PADANG", "name": "LBY", "province": "SUMATERA BARAT", "lat": -0.811721961, "lon": 100.317389, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "TANJUNG PINANG", "name": "TPI", "province": "KEPULAUAN RIAU", "lat": 0.92603, "lon": 104.450737, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "SYA", "province": "KEPULAUAN RIAU", "lat": 1.015226033, "lon": 103.385993, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "PPJ", "province": "SUMATERA BARAT", "lat": -0.463200021, "lon": 100.39922, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "TANJUNG PINANG", "name": "KMS", "province": "KEPULAUAN RIAU", "lat": 0.91753, "lon": 104.514214, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "KOTA PADANG", "name": "SIE", "province": "SUMATERA BARAT", "lat": -0.887352822, "lon": 100.3689084, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "SIJUNJUNG DHARMASRAYA", "name": "GMN", "province": "SUMATERA BARAT", "lat": -1.022085626, "lon": 101.603882, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "KOTA PADANG", "name": "BGS", "province": "SUMATERA BARAT", "lat": -1.046730507, "lon": 100.4133561, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "INDRAGIRI HILIR", "name": "TBH", "province": "RIAU", "lat": -0.325568155, "lon": 103.1590093, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "BKT", "province": "SUMATERA BARAT", "lat": -0.308968745, "lon": 100.3711455, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "KOTA PADANG", "name": "ULK", "province": "SUMATERA BARAT", "lat": -0.911080564, "lon": 100.351175, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "DUMAI BENGKALIS", "name": "SGP", "province": "RIAU", "lat": 1.360676716, "lon": 102.1570254, "branch": "DUMAI"}, {"witel": "REGIONAL I", "cluster": "MENTAWAI DAN PESISIR", "name": "TPJ", "province": "SUMATERA BARAT", "lat": -2.053806541, "lon": 99.5755534, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "SOLOK SAWAH LUNTO", "name": "SWL", "province": "SUMATERA BARAT", "lat": -0.670432769, "lon": 100.7637272, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "MENTAWAI DAN PESISIR", "name": "BLS", "province": "SUMATERA BARAT", "lat": -1.798138, "lon": 100.839085, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "DUMAI BENGKALIS", "name": "BAS", "province": "RIAU", "lat": 1.465942507, "lon": 102.1108761, "branch": "DUMAI"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "PUK", "province": "SUMATERA BARAT", "lat": -0.65033845, "lon": 100.2187197, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "PELALAWAN", "name": "PKR", "province": "RIAU", "lat": 0.422057199, "lon": 101.8587179, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "PASAMAN", "name": "TAP", "province": "SUMATERA BARAT", "lat": 0.438265857, "lon": 100.0399193, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "PAM", "province": "SUMATERA BARAT", "lat": -0.625123027, "lon": 100.1318554, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "SIJUNJUNG DHARMASRAYA", "name": "SJJ", "province": "SUMATERA BARAT", "lat": -0.661670042, "lon": 100.93776, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "SIAK MERANTI", "name": "SEA", "province": "RIAU", "lat": 1.121865806, "lon": 102.1561619, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "TANJUNG PINANG", "name": "TUB", "province": "KEPULAUAN RIAU", "lat": 1.07218, "lon": 104.226898, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "PASAMAN", "name": "UGD", "province": "SUMATERA BARAT", "lat": 0.2781779, "lon": 99.54812748, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "PNI", "province": "KEPULAUAN RIAU", "lat": 1.073406748, "lon": 104.0250793, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "MENTAWAI DAN PESISIR", "name": "TPN", "province": "SUMATERA BARAT", "lat": -2.148611, "lon": 101.082222, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "KOTA PADANG", "name": "PDC", "province": "SUMATERA BARAT", "lat": -0.953677529, "lon": 100.3631127, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "SIJUNJUNG DHARMASRAYA", "name": "SUN", "province": "SUMATERA BARAT", "lat": -1.115948987, "lon": 101.716827, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "PASAMAN", "name": "PTI", "province": "SUMATERA BARAT", "lat": 0.365910168, "lon": 100.0586835, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "KAMPAR", "name": "BKN", "province": "RIAU", "lat": 0.33726702, "lon": 101.0221115, "branch": "DUMAI"}, {"witel": "REGIONAL I", "cluster": "TANJUNG PINANG", "name": "KIJ", "province": "KEPULAUAN RIAU", "lat": 0.854009169, "lon": 104.6006805, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "BUM", "province": "KEPULAUAN RIAU", "lat": 1.171429956, "lon": 104.0086472, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "INDRAGIRI HULU", "name": "AMK", "province": "RIAU", "lat": -0.360730327, "lon": 102.2936665, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "SOLOK SAWAH LUNTO", "name": "LUG", "province": "SUMATERA BARAT", "lat": -1.551734045, "lon": 101.247246, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "PAYAKUMBUH", "name": "SIG", "province": "SUMATERA BARAT", "lat": -0.180704, "lon": 100.597403, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "SIAK MERANTI", "name": "SLJ", "province": "RIAU", "lat": 1.013397303, "lon": 102.7107993, "branch": "DUMAI"}, {"witel": "REGIONAL I", "cluster": "MENTAWAI DAN PESISIR", "name": "SOB", "province": "SUMATERA BARAT", "lat": -2.192144947, "lon": 99.73209936, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "PASAMAN", "name": "ABG", "province": "SUMATERA BARAT", "lat": 0.208078094, "lon": 99.39441297, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "PAYAKUMBUH", "name": "HRU", "province": "SUMATERA BARAT", "lat": -0.150544281, "lon": 100.6721694, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "INDRAGIRI HULU", "name": "RGT", "province": "RIAU", "lat": -0.37414611, "lon": 102.5474798, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "PAYAKUMBUH", "name": "SMU", "province": "SUMATERA BARAT", "lat": -0.461786732, "lon": 100.5124923, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "SOLOK SAWAH LUNTO", "name": "SUM", "province": "SUMATERA BARAT", "lat": -0.712980256, "lon": 100.5925554, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "SIJUNJUNG DHARMASRAYA", "name": "SUR", "province": "SUMATERA BARAT", "lat": -1.224625291, "lon": 101.7434964, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "MENTAWAI DAN PESISIR", "name": "MSB", "province": "SUMATERA BARAT", "lat": -1.5969, "lon": 99.2136, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "SCC", "province": "SUMATERA BARAT", "lat": -0.56349883, "lon": 100.2814106, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "DUMAI BENGKALIS", "name": "DRI", "province": "RIAU", "lat": 1.267274468, "lon": 101.1921172, "branch": "DUMAI"}, {"witel": "REGIONAL I", "cluster": "ROKAN HILIR", "name": "BGU", "province": "RIAU", "lat": 1.698423938, "lon": 100.4076124, "branch": "DUMAI"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "NRS", "province": "SUMATERA BARAT", "lat": -0.561943984, "lon": 100.099724, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "PASAMAN", "name": "KNL", "province": "SUMATERA BARAT", "lat": -0.05880989, "lon": 99.90653874, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "PAYAKUMBUH", "name": "SIU", "province": "SUMATERA BARAT", "lat": -0.348329002, "lon": 100.543808, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "TANJUNG PINANG", "name": "RAI", "province": "KEPULAUAN RIAU", "lat": 3.941165, "lon": 108.387719, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "PEKANBARU", "name": "RBI", "province": "RIAU", "lat": 0.569429988, "lon": 101.4269617, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "KOTA PADANG", "name": "KJI", "province": "SUMATERA BARAT", "lat": -0.906254178, "lon": 100.4060205, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "SOLOK SAWAH LUNTO", "name": "ALH", "province": "SUMATERA BARAT", "lat": -1.081944031, "lon": 100.788055, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "DUMAI BENGKALIS", "name": "DUM", "province": "RIAU", "lat": 1.678463411, "lon": 101.4461335, "branch": "DUMAI"}, {"witel": "REGIONAL I", "cluster": "PAYAKUMBUH", "name": "BSK", "province": "SUMATERA BARAT", "lat": -0.45616501, "lon": 100.59453, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "MENTAWAI DAN PESISIR", "name": "PNN", "province": "SUMATERA BARAT", "lat": -1.348810009, "lon": 100.579673, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "LBJ", "province": "KEPULAUAN RIAU", "lat": 1.135213645, "lon": 104.0188254, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "SIJUNJUNG DHARMASRAYA", "name": "KGG", "province": "SUMATERA BARAT", "lat": -1.032523149, "lon": 101.6860182, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "MENTAWAI DAN PESISIR", "name": "SRT", "province": "SUMATERA BARAT", "lat": -1.585569081, "lon": 100.6465953, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "ROKAN HULU", "name": "PPN", "province": "RIAU", "lat": 0.861741266, "lon": 100.3011294, "branch": "DUMAI"}, {"witel": "REGIONAL I", "cluster": "MENTAWAI DAN PESISIR", "name": "BKP", "province": "SUMATERA BARAT", "lat": -1.442870758, "lon": 100.5999247, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "SIAK MERANTI", "name": "PWG", "province": "RIAU", "lat": 0.667948726, "lon": 101.6113721, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "PAYAKUMBUH", "name": "KOU", "province": "SUMATERA BARAT", "lat": -0.385546271, "lon": 100.3966453, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "PAYAKUMBUH", "name": "PYK", "province": "SUMATERA BARAT", "lat": -0.228607018, "lon": 100.6244836, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "PEKANBARU", "name": "PBB", "province": "RIAU", "lat": 0.524702052, "lon": 101.4484475, "branch": "PEKANBARU"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "LBB", "province": "SUMATERA BARAT", "lat": -0.31717298, "lon": 100.0303176, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "-", "name": "SKK", "province": "SUMATERA BARAT", "lat": -2.778096655, "lon": 100.2090509, "branch": "PADANG"}, {"witel": "REGIONAL I", "cluster": "PAYAKUMBUH", "name": "PNA", "province": "SUMATERA BARAT", "lat": 0.082514462, "lon": 100.7335471, "branch": "BUKITTINGGI"}, {"witel": "REGIONAL I", "cluster": "BATAM", "name": "TJT", "province": "KEPULAUAN RIAU", "lat": 0.666903308, "lon": 103.4597407, "branch": "BATAM"}, {"witel": "REGIONAL I", "cluster": "AGAM", "name": "SUP", "province": "SUMATERA BARAT", "lat": -0.358515636, "lon": 100.411187, "branch": "BUKITTINGGI"}];
+
+            var weatherCache = new Map();
+
+            var BRANCH_COLORS = {
+                'BATAM': '#3b82f6',       // Sky Blue
+                'BUKITTINGGI': '#10b981',  // Emerald Green
+                'DUMAI': '#8b5cf6',        // Vibrant Violet
+                'PADANG': '#f59e0b',       // Amber Orange
+                'PEKANBARU': '#ef4444'     // Coral Red
+            };
+            var DEFAULT_COLOR = '#64748b';
+
+            var BRANCH_BMKG_CODES = {
+                'BATAM': '21.71.10.1001',        // Baloi Permai, Batam Kota
+                'BUKITTINGGI': '13.75.01.1001',  // Tarok Dipo, Guguk Panjang
+                'DUMAI': '14.72.06.1001',        // Laksamana, Dumai Kota
+                'PADANG': '13.71.03.1001',       // Flamboyan Baru, Padang Barat
+                'PEKANBARU': '14.71.02.1001'     // Simpang Empat, Pekanbaru Kota
+            };
+
+            var WEATHER_INFO = {
+                0: { text: "Clear", icon: "sun" },
+                1: { text: "Partly Cloudy", icon: "cloud-sun" },
+                2: { text: "Cloudy", icon: "cloud" },
+                3: { text: "Overcast", icon: "cloud" },
+                45: { text: "Foggy", icon: "cloud-fog" },
+                48: { text: "Depositing Rime Fog", icon: "cloud-fog" },
+                51: { text: "Light Drizzle", icon: "cloud-drizzle" },
+                53: { text: "Moderate Drizzle", icon: "cloud-drizzle" },
+                55: { text: "Heavy Drizzle", icon: "cloud-drizzle" },
+                56: { text: "Light Freezing Drizzle", icon: "cloud-snow" },
+                57: { text: "Heavy Freezing Drizzle", icon: "cloud-snow" },
+                61: { text: "Light Rain", icon: "cloud-rain" },
+                63: { text: "Moderate Rain", icon: "cloud-rain" },
+                65: { text: "Heavy Rain", icon: "cloud-heavy-rain" },
+                66: { text: "Light Freezing Rain", icon: "cloud-snow" },
+                67: { text: "Heavy Freezing Rain", icon: "cloud-snow" },
+                71: { text: "Light Snowfall", icon: "snowflake" },
+                73: { text: "Moderate Snowfall", icon: "snowflake" },
+                75: { text: "Heavy Snowfall", icon: "snowflake" },
+                77: { text: "Snow Grains", icon: "snowflake" },
+                80: { text: "Light Rain Showers", icon: "cloud-drizzle" },
+                81: { text: "Moderate Rain Showers", icon: "cloud-rain" },
+                82: { text: "Heavy Rain Showers", icon: "cloud-heavy-rain" },
+                85: { text: "Light Snow Showers", icon: "snowflake" },
+                86: { text: "Heavy Snow Showers", icon: "snowflake" },
+                95: { text: "Thunderstorm", icon: "cloud-lightning" },
+                96: { text: "Thunderstorm with Slight Hail", icon: "cloud-hail" },
+                99: { text: "Thunderstorm with Heavy Hail", icon: "cloud-hail" }
+            };
+
+            var WEATHER_EMOJIS = {
+                0: { emoji: "☀️", text: "Clear", anim: "anim-spin" },
+                1: { emoji: "⛅", text: "Partly Cloudy", anim: "" },
+                2: { emoji: "☁️", text: "Cloudy", anim: "anim-pulse" },
+                3: { emoji: "☁️", text: "Overcast", anim: "anim-pulse" },
+                45: { emoji: "🌫️", text: "Foggy", anim: "anim-drift" },
+                48: { emoji: "🌫️", text: "Depositing Rime Fog", anim: "anim-drift" },
+                51: { emoji: "🌦️", text: "Light Drizzle", anim: "anim-bounce" },
+                53: { emoji: "🌦️", text: "Moderate Drizzle", anim: "anim-bounce" },
+                55: { emoji: "🌦️", text: "Heavy Drizzle", anim: "anim-bounce" },
+                61: { emoji: "🌧️", text: "Light Rain", anim: "anim-bounce" },
+                63: { emoji: "🌧️", text: "Moderate Rain", anim: "anim-bounce" },
+                65: { emoji: "🌧️", text: "Heavy Rain", anim: "anim-bounce" },
+                80: { emoji: "🌧️", text: "Light Rain Showers", anim: "anim-bounce" },
+                81: { emoji: "🌧️", text: "Moderate Rain Showers", anim: "anim-bounce" },
+                82: { emoji: "🌧️", text: "Heavy Rain Showers", anim: "anim-bounce" },
+                95: { emoji: "⛈️", text: "Thunderstorm", anim: "anim-bounce" },
+                96: { emoji: "⛈️", text: "Thunderstorm with Hail", anim: "anim-bounce" },
+                99: { emoji: "⛈️", text: "Heavy Thunderstorm", anim: "anim-bounce" }
+            };
+
+            var allStosWeatherForecast = null;
+
+            var map = null;
+            var markersLayer = L.layerGroup();
+            var stoData = [];
+            var activeSto = null;
+            var activeWeatherResponse = null;
+            var activeDayFilter = 'today';
+            var visibleBranches = new Set(Object.keys(BRANCH_COLORS));
+            
+            var dates = {};
+            calculateDates();
+
+            var sidebar = document.getElementById('sidebar');
+            var sidebarEmpty = document.getElementById('sidebar-empty');
+            var sidebarMain = document.getElementById('sidebar-main');
+            var sidebarLoader = document.getElementById('sidebar-loader');
+            var weatherContentArea = document.getElementById('weather-content-area');
+            
+            var stoNameEl = document.getElementById('sto-name');
+            var stoBranchValEl = document.getElementById('sto-branch-val');
+            var stoProvinceValEl = document.getElementById('sto-province-val');
+            var stoCoordsValEl = document.getElementById('sto-coords-val');
+
+            var aqiValueEl = document.getElementById('aqi-value');
+            var aqiStatusEl = document.getElementById('aqi-status');
+            var aqiPollutantsEl = document.getElementById('aqi-pollutants');
+            var aqiAdviceEl = document.getElementById('aqi-advice');
+            var aqiCard = document.getElementById('aqi-card');
+
+            var uvValueEl = document.getElementById('uv-value');
+            var uvStatusEl = document.getElementById('uv-status');
+            var uvAdviceEl = document.getElementById('uv-advice');
+            var uvBarFill = document.getElementById('uv-bar-fill');
+            var uvCard = document.getElementById('uv-card');
+
+            var tempRangeValEl = document.getElementById('temp-range-val');
+            var timelineListEl = document.getElementById('timeline-list');
+            var stoSearchInput = document.getElementById('sto-search');
+
+            if (typeof L === 'undefined') {
+                var mapEl = document.getElementById('map');
+                if (mapEl) {
+                    mapEl.innerHTML = '<div style="padding:2rem;color:#ef4444;font-weight:bold;text-align:center;">Gagal memuat pustaka peta Leaflet JS. Silakan periksa koneksi internet Anda.</div>';
+                }
+                return;
+            }
+
+            initClock();
+            initMap();
+            initDateTabs();
+            initSearch();
+            loadStoData();
+
+            function calculateDates() {
+                var today = new Date();
+                var yesterday = new Date(today);
+                yesterday.setDate(today.getDate() - 1);
+                var tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+
+                dates = {
+                    yesterday: {
+                        iso: yesterday.toISOString().split('T')[0],
+                        label: 'H-1',
+                        display: formatDisplayDate(yesterday)
+                    },
+                    today: {
+                        iso: today.toISOString().split('T')[0],
+                        label: 'H',
+                        display: formatDisplayDate(today)
+                    },
+                    tomorrow: {
+                        iso: tomorrow.toISOString().split('T')[0],
+                        label: 'H+1',
+                        display: formatDisplayDate(tomorrow)
+                    }
+                };
+
+                var yEl = document.getElementById('date-yesterday');
+                var tEl = document.getElementById('date-today');
+                var tmEl = document.getElementById('date-tomorrow');
+
+                if (yEl) yEl.innerText = dates.yesterday.display;
+                if (tEl) tEl.innerText = dates.today.display;
+                if (tmEl) tmEl.innerText = dates.tomorrow.display;
+            }
+
+            function formatDisplayDate(date) {
+                var options = { day: 'numeric', month: 'short' };
+                return date.toLocaleDateString('en-US', options);
+            }
+
+            function initClock() {
+                var timeText = document.getElementById('current-time-text');
+                if (!timeText) return;
+                function updateTime() {
+                    var now = new Date();
+                    var timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    var dateString = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                    timeText.innerText = dateString + ' | ' + timeString;
+                }
+                updateTime();
+                setInterval(updateTime, 1000);
+            }
+
+            function initMap() {
+                map = L.map('map', {
+                    zoomControl: true,
+                    maxZoom: 18,
+                    minZoom: 5
+                }).setView([0.5, 102.0], 7);
+
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }).addTo(map);
+
+                markersLayer.addTo(map);
+            }
+
+            function initDateTabs() {
+                var tabs = document.querySelectorAll('.con-date-tab');
+                tabs.forEach(function(tab) {
+                    tab.addEventListener('click', function() {
+                        tabs.forEach(function(t) { t.classList.remove('active'); });
+                        tab.classList.add('active');
+                        
+                        activeDayFilter = tab.getAttribute('data-day');
+                        if (allStosWeatherForecast) {
+                            renderConsolidatedTable();
+                        }
+                    });
+                });
+            }
+
+            function classifyWeather(code) {
+                if (code === 0 || code === 1) {
+                    return 'cerah';
+                } else if (code === 2 || code === 3 || code === 45 || code === 48) {
+                    return 'mendung';
+                } else if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99].indexOf(code) !== -1) {
+                    return 'hujan';
+                }
+                return 'cerah'; // default fallback
+            }
+
+            function fetchAllStosWeatherForecast() {
+                var loadingEl = document.getElementById('table-loading-overlay');
+                var tableEl = document.getElementById('consolidated-weather-table');
+                
+                if (stoData.length === 0) return;
+
+                var latitudes = stoData.map(function(s) { return s.lat; }).join(',');
+                var longitudes = stoData.map(function(s) { return s.lon; }).join(',');
+
+                var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + latitudes + '&longitude=' + longitudes + '&hourly=weather_code&forecast_days=2&timezone=auto';
+
+                if (loadingEl) loadingEl.classList.remove('hidden');
+                if (tableEl) tableEl.classList.add('hidden');
+
+                fetch(url)
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        allStosWeatherForecast = Array.isArray(data) ? data : [data];
+                        
+                        calculateAndRenderBranchSummaries();
+                        renderConsolidatedTable();
+
+                        if (loadingEl) loadingEl.classList.add('hidden');
+                        if (tableEl) tableEl.classList.remove('hidden');
+                    })
+                    .catch(function(err) {
+                        console.error("Error fetching consolidated weather:", err);
+                        if (loadingEl) {
+                            loadingEl.innerHTML = '<span style="color: var(--color-error); font-weight: 600;">⚠️ Gagal memuat data cuaca. Silakan periksa koneksi atau refresh halaman.</span>';
+                        }
+                    });
+            }
+
+            function calculateAndRenderBranchSummaries() {
+                if (!allStosWeatherForecast) return;
+
+                var branches = {};
+                Object.keys(BRANCH_COLORS).forEach(function(b) {
+                    branches[b] = {
+                        name: b,
+                        color: BRANCH_COLORS[b],
+                        stos: [],
+                        weatherCounts: { cerah: 0, mendung: 0, hujan: 0 }
+                    };
+                });
+
+                var currentHour = new Date().getHours();
+
+                allStosWeatherForecast.forEach(function(resItem, idx) {
+                    var sto = stoData[idx];
+                    if (!sto) return;
+
+                    var hourlyVal = resItem.hourly || {};
+                    var weatherCodes = hourlyVal.weather_code || [];
+                    
+                    var code = weatherCodes[currentHour] !== undefined ? weatherCodes[currentHour] : 0;
+                    var condition = classifyWeather(code);
+
+                    var b = (sto.branch || 'UNKNOWN').toUpperCase();
+                    if (branches[b]) {
+                        branches[b].stos.push(sto);
+                        branches[b].weatherCounts[condition]++;
+                    }
+                });
+
+                renderBranchSummaryCards(branches);
+            }
+
+            function renderBranchSummaryCards(branches) {
+                var container = document.getElementById('branch-summary-container');
+                if (!container) return;
+                container.innerHTML = '';
+
+                Object.keys(branches).forEach(function(bName) {
+                    var b = branches[bName];
+                    var isDimmed = !visibleBranches.has(bName);
+                    
+                    var card = document.createElement('div');
+                    card.className = 'branch-summary-card' + (isDimmed ? ' dimmed' : '');
+                    card.style.borderLeft = '4px solid ' + b.color;
+                    card.setAttribute('data-branch-card', bName);
+
+                    var summaryHtml = 
+                        '<div class="branch-summary-header">' +
+                            '<span class="branch-summary-title">' + bName + '</span>' +
+                            '<span class="branch-summary-count">' + b.stos.length + ' STO</span>' +
+                        '</div>' +
+                        '<div class="branch-summary-body">' +
+                            '<div class="weather-count-item" title="Sunny / Partly Cloudy">' +
+                                '<span class="weather-count-icon">☀️</span>' +
+                                '<span class="weather-count-label">Sunny</span>' +
+                                '<span class="weather-count-value">' + b.weatherCounts.cerah + '</span>' +
+                            '</div>' +
+                            '<div class="weather-count-item" title="Cloudy / Overcast / Foggy">' +
+                                '<span class="weather-count-icon">☁️</span>' +
+                                '<span class="weather-count-label">Cloudy</span>' +
+                                '<span class="weather-count-value">' + b.weatherCounts.mendung + '</span>' +
+                            '</div>' +
+                            '<div class="weather-count-item" title="Rainy / Drizzle / Thunderstorm">' +
+                                '<span class="weather-count-icon">🌧️</span>' +
+                                '<span class="weather-count-label">Rainy</span>' +
+                                '<span class="weather-count-value">' + b.weatherCounts.hujan + '</span>' +
+                            '</div>' +
+                        '</div>';
+                    
+                    card.innerHTML = summaryHtml;
+
+                    card.addEventListener('click', function() {
+                        var legendItem = document.querySelector('.legend-item[data-branch="' + bName + '"]');
+                        if (visibleBranches.has(bName)) {
+                            visibleBranches.delete(bName);
+                            card.classList.add('dimmed');
+                            if (legendItem) legendItem.classList.add('dimmed');
+                        } else {
+                            visibleBranches.add(bName);
+                            card.classList.remove('dimmed');
+                            if (legendItem) legendItem.classList.remove('dimmed');
+                        }
+                        filterMarkers();
+                    });
+
+                    container.appendChild(card);
+                });
+            }
+
+            function renderConsolidatedTable() {
+                var tbody = document.getElementById('consolidated-table-body');
+                var headersRow = document.getElementById('consolidated-table-headers');
+                if (!tbody || !headersRow || !allStosWeatherForecast) return;
+
+                headersRow.innerHTML = '<th>Service Area / STO</th>';
+                for (var h = 6; h <= 22; h++) {
+                    var hourStr = (h < 10 ? '0' + h : h) + ':00';
+                    headersRow.innerHTML += '<th style="text-align: center; min-width: 65px;">' + hourStr + '</th>';
+                }
+
+                var query = stoSearchInput ? stoSearchInput.value.toLowerCase().trim() : '';
+
+                var branchGroups = {};
+                stoData.forEach(function(sto, index) {
+                    var branchName = (sto.branch || 'UNKNOWN').toUpperCase();
+                    var saName = sto.cluster || 'OTHER';
+                    
+                    if (!branchGroups[branchName]) {
+                        branchGroups[branchName] = {};
+                    }
+                    if (!branchGroups[branchName][saName]) {
+                        branchGroups[branchName][saName] = [];
+                    }
+                    branchGroups[branchName][saName].push({
+                        sto: sto,
+                        index: index
+                    });
+                });
+
+                tbody.innerHTML = '';
+
+                var startIndex = activeDayFilter === 'today' ? 0 : 24;
+                var sortedBranches = Object.keys(branchGroups).sort();
+
+                sortedBranches.forEach(function(branchName) {
+                    var saGroups = branchGroups[branchName];
+                    var sortedSAs = Object.keys(saGroups).sort();
+                    
+                    var hasVisibleStosInBranch = sortedSAs.some(function(saName) {
+                        var items = saGroups[saName];
+                        return items.some(function(item) {
+                            var sto = item.sto;
+                            var matchesSearch = query === '' || 
+                                                  sto.name.toLowerCase().indexOf(query) !== -1 || 
+                                                  sto.branch.toLowerCase().indexOf(query) !== -1;
+                            var isBranchVisible = visibleBranches.has(sto.branch);
+                            return matchesSearch && isBranchVisible;
+                        });
+                    });
+
+                    if (!hasVisibleStosInBranch) return;
+
+                    var branchRow = document.createElement('tr');
+                    branchRow.className = 'branch-header-row collapsed';
+                    branchRow.style.cursor = 'pointer';
+                    branchRow.setAttribute('data-branch-name', branchName);
+                    var branchColor = BRANCH_COLORS[branchName] || '#64748b';
+                    branchRow.innerHTML = '<td colspan="18">' +
+                                            '<div class="branch-header-content">' +
+                                                '<i data-lucide="chevron-right" class="branch-chevron" style="transition: transform 0.2s; color: var(--text-secondary); width: 16px; height: 16px;"></i>' +
+                                                '<span class="branch-indicator" style="background-color: ' + branchColor + ';"></span>' +
+                                                '<span class="branch-header-title">' + branchName + ' BRANCH</span>' +
+                                            '</div>' +
+                                          '</td>';
+                    
+                    branchRow.addEventListener('click', function() {
+                        toggleBranchRow(branchName);
+                    });
+                    
+                    tbody.appendChild(branchRow);
+
+                    sortedSAs.forEach(function(saName) {
+                        var items = saGroups[saName];
+                        
+                        var hasVisibleStosInSA = items.some(function(item) {
+                            var sto = item.sto;
+                            var matchesSearch = query === '' || 
+                                                  sto.name.toLowerCase().indexOf(query) !== -1 || 
+                                                  sto.branch.toLowerCase().indexOf(query) !== -1;
+                            var isBranchVisible = visibleBranches.has(sto.branch);
+                            return matchesSearch && isBranchVisible;
+                        });
+
+                        if (!hasVisibleStosInSA) return;
+
+                        var saRow = document.createElement('tr');
+                        saRow.className = 'sa-row collapsed hidden child-of-branch-' + branchName;
+                        saRow.setAttribute('data-branch-name', branchName);
+                        var uniqueSaId = branchName + '_' + sanitizeClassName(saName);
+                        saRow.setAttribute('data-sa-id', uniqueSaId);
+                        
+                        var recapText = generateSaRecap(saName, items);
+                        var saRowHtml = '<td style="border-right: none;">' +
+                                            '<div class="sa-cell-content">' +
+                                                '<div class="sa-title-row">' +
+                                                    '<i data-lucide="chevron-right" class="sa-chevron"></i>' +
+                                                    '<span class="sa-title">' + saName + '</span>' +
+                                                    '<span class="sa-sto-count">(' + items.length + ' STO)</span>' +
+                                                '</div>' +
+                                                '<div class="sa-recap-text">' + recapText + '</div>' +
+                                            '</div>' +
+                                        '</td>';
+                        for (var h = 6; h <= 22; h++) {
+                            var codeIdx = startIndex + h;
+                            var domCode = getDominantWeatherCode(items, codeIdx);
+                            var emojiData = WEATHER_EMOJIS[domCode] || { emoji: "☀️", text: "Clear", anim: "" };
+                            var grayClass = getWeatherGrayClass(domCode);
+                            var hourStr = (h < 10 ? '0' + h : h) + ':00';
+                            var dateLabel = activeDayFilter === 'today' ? 'Today' : 'Tomorrow';
+                            
+                            saRowHtml += '<td class="weather-hour-cell" title="' + emojiData.text + ' (SA Dominant)" ' +
+                                         'onclick="event.stopPropagation(); showWeatherDetails(\'Service Area ' + saName + '\', \'SA Summary\', \'' + hourStr + '\', \'' + dateLabel + '\', ' + domCode + ')">' +
+                                         '<div class="weather-cell-wrapper">' +
+                                             '<span class="emoji-wrapper ' + emojiData.anim + ' ' + grayClass + '">' + emojiData.emoji + '</span>' +
+                                             '<span class="weather-desc-text">' + emojiData.text + '</span>' +
+                                         '</div>' +
+                                         '</td>';
+                        }
+                        saRow.innerHTML = saRowHtml;
+                        
+                        saRow.addEventListener('click', function() {
+                            toggleSaRow(uniqueSaId);
+                        });
+
+                        tbody.appendChild(saRow);
+
+                        items.forEach(function(item) {
+                            var sto = item.sto;
+                            var idx = item.index;
+                            var matchesSearch = query === '' || 
+                                                  sto.name.toLowerCase().indexOf(query) !== -1 || 
+                                                  sto.branch.toLowerCase().indexOf(query) !== -1;
+                            var isBranchVisible = visibleBranches.has(sto.branch);
+
+                            if (!matchesSearch || !isBranchVisible) return;
+
+                            var stoRow = document.createElement('tr');
+                            stoRow.className = 'sto-row child-of-' + uniqueSaId + ' hidden';
+                            stoRow.setAttribute('data-sto-name', sto.name);
+                            stoRow.setAttribute('data-sa-id', uniqueSaId);
+                            
+                            stoRow.addEventListener('click', function() {
+                                var val = markersMap.get(idx);
+                                if (val && val.marker) {
+                                    handleStoClick(sto, val.marker);
+                                }
+                            });
+
+                            var rowHtml = '<td class="sto-name-cell">' + sto.name + '</td>';
+
+                            var forecast = allStosWeatherForecast[idx];
+                            var weatherCodes = (forecast && forecast.hourly && forecast.hourly.weather_code) || [];
+
+                            for (var h = 6; h <= 22; h++) {
+                                var codeIdx = startIndex + h;
+                                var code = weatherCodes[codeIdx] !== undefined ? weatherCodes[codeIdx] : 0;
+                                var emojiData = WEATHER_EMOJIS[code] || { emoji: "☀️", text: "Clear", anim: "" };
+                                var grayClass = getWeatherGrayClass(code);
+                                var hourStr = (h < 10 ? '0' + h : h) + ':00';
+                                var dateLabel = activeDayFilter === 'today' ? 'Today' : 'Tomorrow';
+                                
+                                rowHtml += '<td class="weather-hour-cell" title="' + emojiData.text + '" ' +
+                                             'onclick="event.stopPropagation(); showWeatherDetails(\'' + sto.name + '\', \'' + saName + '\', \'' + hourStr + '\', \'' + dateLabel + '\', ' + code + ')">' +
+                                             '<div class="weather-cell-wrapper">' +
+                                                 '<span class="emoji-wrapper ' + emojiData.anim + ' ' + grayClass + '">' + emojiData.emoji + '</span>' +
+                                                 '<span class="weather-desc-text">' + emojiData.text + '</span>' +
+                                             '</div>' +
+                                           '</td>';
+                            }
+
+                            stoRow.innerHTML = rowHtml;
+                            tbody.appendChild(stoRow);
+                        });
+                    });
+                });
+
+                lucide.createIcons();
+            }
+
+            function getWeatherGrayClass(code) {
+                if (code === 2 || code === 3 || code === 45 || code === 48) {
+                    return 'weather-gray-overcast';
+                }
+                if (code === 51 || code === 53 || code === 55 || code === 61 || code === 80) {
+                    return 'weather-gray-drizzle';
+                }
+                if (code === 63 || code === 81) {
+                    return 'weather-gray-modrain';
+                }
+                if (code === 65 || code === 82) {
+                    return 'weather-gray-heavyrain';
+                }
+                if (code === 95 || code === 96 || code === 99) {
+                    return 'weather-gray-storm';
+                }
+                return '';
+            }
+
+            function getDominantWeatherCode(items, hourIndex) {
+                if (!items || items.length === 0) return 0;
+                
+                var counts = {};
+                items.forEach(function(item) {
+                    var forecast = allStosWeatherForecast[item.index];
+                    var weatherCodes = (forecast && forecast.hourly && forecast.hourly.weather_code) || [];
+                    var code = weatherCodes[hourIndex] !== undefined ? weatherCodes[hourIndex] : 0;
+                    counts[code] = (counts[code] || 0) + 1;
+                });
+                
+                var maxCode = 0;
+                var maxCount = -1;
+                Object.keys(counts).forEach(function(code) {
+                    if (counts[code] > maxCount) {
+                        maxCount = counts[code];
+                        maxCode = parseInt(code);
+                    }
+                });
+                return maxCode;
+            }
+
+            function generateSaRecap(saName, items) {
+                var startIndex = activeDayFilter === 'today' ? 0 : 24;
+                var rainHours = [];
+                var rainyStos = new Set();
+                var worstCondition = 'Clear';
+                var worstCode = 0;
+                
+                for (var h = 6; h <= 22; h++) {
+                    var codeIdx = startIndex + h;
+                    items.forEach(function(item) {
+                        var forecast = allStosWeatherForecast[item.index];
+                        var weatherCodes = (forecast && forecast.hourly && forecast.hourly.weather_code) || [];
+                        var code = weatherCodes[codeIdx] !== undefined ? weatherCodes[codeIdx] : 0;
+                        
+                        if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99].indexOf(code) !== -1) {
+                            rainyStos.add(item.sto.name);
+                            rainHours.push(h);
+                        }
+                        if (code > worstCode) {
+                            worstCode = code;
+                        }
+                    });
+                }
+                
+                if (rainyStos.size > 0) {
+                    var minHour = Math.min.apply(null, rainHours);
+                    var maxHour = Math.max.apply(null, rainHours);
+                    
+                    var minHourStr = (minHour < 10 ? '0' + minHour : minHour) + ':00';
+                    var maxHourStr = (maxHour < 10 ? '0' + maxHour : maxHour) + ':00';
+                    
+                    var worstEmojiData = WEATHER_EMOJIS[worstCode] || { text: 'Rainy' };
+                    var condEn = translateToEnglish(worstEmojiData.text.toLowerCase());
+                    
+                    return rainyStos.size + " STO" + (rainyStos.size > 1 ? "s" : "") + " " + (rainyStos.size > 1 ? "experience" : "experiences") + " " + condEn + " from " + minHourStr + " to " + maxHourStr;
+                } else {
+                    var worstEmojiData = WEATHER_EMOJIS[worstCode] || { text: 'Clear' };
+                    var condEn = translateToEnglish(worstEmojiData.text.toLowerCase());
+                    return "Mostly " + condEn + " (06:00 - 22:00)";
+                }
+            }
+
+            function translateToEnglish(text) {
+                var t = text.toLowerCase();
+                if (t.indexOf('cerah berawan') !== -1 || t.indexOf('partly cloudy') !== -1) return 'partly cloudy';
+                if (t.indexOf('cerah') !== -1 || t.indexOf('clear') !== -1) return 'clear';
+                if (t.indexOf('berawan') !== -1 || t.indexOf('cloudy') !== -1) return 'cloudy';
+                if (t.indexOf('mendung') !== -1 || t.indexOf('overcast') !== -1) return 'overcast';
+                if (t.indexOf('kabut') !== -1 || t.indexOf('foggy') !== -1) return 'foggy';
+                if (t.indexOf('gerimis') !== -1 || t.indexOf('drizzle') !== -1) return 'drizzle';
+                if (t.indexOf('lebat') !== -1 || t.indexOf('heavy') !== -1) return 'heavy rain';
+                if (t.indexOf('hujan') !== -1 || t.indexOf('rainy') !== -1) return 'rainy';
+                if (t.indexOf('badai') !== -1 || t.indexOf('petir') !== -1 || t.indexOf('thunderstorm') !== -1) return 'thunderstorm';
+                return t;
+            }
+
+            function sanitizeClassName(name) {
+                return name.replace(/[^a-zA-Z0-9]/g, '_');
+            }
+
+            function toggleBranchRow(branchName) {
+                var branchRow = document.querySelector('.branch-header-row[data-branch-name="' + branchName + '"]');
+                if (!branchRow) return;
+
+                var isCollapsed = branchRow.classList.contains('collapsed');
+                var saRows = document.querySelectorAll('.sa-row.child-of-branch-' + branchName);
+                var chevron = branchRow.querySelector('.branch-chevron');
+
+                if (isCollapsed) {
+                    branchRow.classList.remove('collapsed');
+                    if (chevron) chevron.style.transform = 'rotate(90deg)';
+                    saRows.forEach(function(row) {
+                        row.classList.remove('hidden');
+                    });
+                } else {
+                    branchRow.classList.add('collapsed');
+                    if (chevron) chevron.style.transform = 'rotate(0deg)';
+                    saRows.forEach(function(row) {
+                        row.classList.add('hidden');
+                        
+                        var uniqueSaId = row.getAttribute('data-sa-id');
+                        row.classList.add('collapsed');
+                        var saChevron = row.querySelector('.sa-chevron');
+                        if (saChevron) saChevron.style.transform = 'rotate(0deg)';
+                        
+                        var childStos = document.querySelectorAll('.sto-row.child-of-' + uniqueSaId);
+                        childStos.forEach(function(stoRow) {
+                            stoRow.classList.add('hidden');
+                            stoRow.classList.remove('highlight-row');
+                        });
+                    });
+                }
+            }
+
+            function toggleSaRow(uniqueSaId) {
+                var saRow = document.querySelector('.sa-row[data-sa-id="' + uniqueSaId + '"]');
+                if (!saRow) return;
+
+                var isCollapsed = saRow.classList.contains('collapsed');
+                var childRows = document.querySelectorAll('.sto-row.child-of-' + uniqueSaId);
+                var saChevron = saRow.querySelector('.sa-chevron');
+
+                if (isCollapsed) {
+                    saRow.classList.remove('collapsed');
+                    if (saChevron) saChevron.style.transform = 'rotate(90deg)';
+                    childRows.forEach(function(row) {
+                        row.classList.remove('hidden');
+                    });
+                } else {
+                    saRow.classList.add('collapsed');
+                    if (saChevron) saChevron.style.transform = 'rotate(0deg)';
+                    childRows.forEach(function(row) {
+                        row.classList.add('hidden');
+                        row.classList.remove('highlight-row');
+                    });
+                }
+            }
+
+            function highlightStoInTable(stoName) {
+                var stoRow = document.querySelector('.sto-row[data-sto-name="' + stoName + '"]');
+                if (!stoRow) return;
+                
+                var uniqueSaId = stoRow.getAttribute('data-sa-id');
+                var saRow = document.querySelector('.sa-row[data-sa-id="' + uniqueSaId + '"]');
+                if (!saRow) return;
+                
+                var branchName = saRow.getAttribute('data-branch-name');
+                var branchRow = document.querySelector('.branch-header-row[data-branch-name="' + branchName + '"]');
+                
+                if (branchRow && branchRow.classList.contains('collapsed')) {
+                    toggleBranchRow(branchName);
+                }
+                
+                if (saRow && saRow.classList.contains('collapsed')) {
+                    toggleSaRow(uniqueSaId);
+                }
+                
+                document.querySelectorAll('.sto-row').forEach(function(r) {
+                    r.classList.remove('highlight-row');
+                });
+                
+                stoRow.classList.add('highlight-row');
+                stoRow.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            }
+
+            window.showWeatherDetails = function(stoName, saName, hourStr, dateLabel, code) {
+                var modal = document.getElementById('weather-modal');
+                var stoTitleEl = document.getElementById('modal-sto-title');
+                var weatherIconEl = document.getElementById('modal-weather-icon');
+                var weatherTitleEl = document.getElementById('modal-weather-title');
+                var weatherTimeEl = document.getElementById('modal-weather-time');
+                var weatherDetailsEl = document.getElementById('modal-weather-details');
+                
+                if (!modal) return;
+                
+                var emojiData = WEATHER_EMOJIS[code] || { emoji: "☀️", text: "Cerah", anim: "" };
+                
+                var detailsText = "";
+                switch (code) {
+                    case 0:
+                    case 1:
+                        detailsText = "Cuaca cerah sangat mendukung aktivitas operasional dan pemeliharaan perangkat outdoor. Tidak ada potensi hujan atau gangguan iklim signifikan dalam jam ini.";
+                        break;
+                    case 2:
+                    case 3:
+                        detailsText = "Kondisi langit didominasi oleh awan tebal. Suhu udara cukup sejuk, aman untuk aktivitas lapangan di sekitar STO.";
+                        break;
+                    case 45:
+                    case 48:
+                        detailsText = "Terjadi kabut tebal di wilayah ini yang membatasi jarak pandang secara drastis. Harap waspada saat berkendara menuju atau dari STO.";
+                        break;
+                    case 51:
+                    case 53:
+                    case 55:
+                        detailsText = "Gerimis dengan intensitas ringan sedang membasahi area sekitar. Aktivitas outdoor dapat tetap berlangsung dengan menggunakan pelindung air/jas hujan.";
+                        break;
+                    case 61:
+                    case 63:
+                    case 65:
+                    case 80:
+                    case 81:
+                    case 82:
+                        detailsText = "Hujan lebat sedang berlangsung di koordinat STO ini. Waspadai genangan air di sekitar area pemancar/perangkat dan pastikan sistem drainase berfungsi optimal.";
+                        break;
+                    case 95:
+                    case 96:
+                    case 99:
+                        detailsText = "PERINGATAN DINI CUACA EKSTREM: Badai petir aktif terdeteksi. Matikan atau lindungi peralatan listrik sensitif yang berisiko terkena sambaran petir. Hindari area terbuka.";
+                        break;
+                    default:
+                        detailsText = "Kondisi klimatologi normal regional.";
+                }
+                
+                if (stoTitleEl) stoTitleEl.innerText = "STO " + stoName + " (" + saName + ")";
+                if (weatherIconEl) weatherIconEl.innerHTML = '<span class="emoji-wrapper ' + emojiData.anim + '">' + emojiData.emoji + '</span>';
+                if (weatherTitleEl) weatherTitleEl.innerText = emojiData.text;
+                if (weatherTimeEl) weatherTimeEl.innerText = dateLabel + " | Jam " + hourStr;
+                if (weatherDetailsEl) weatherDetailsEl.innerText = detailsText;
+                
+                modal.classList.add('open');
+            };
+
+            window.closeWeatherModal = function() {
+                var modal = document.getElementById('weather-modal');
+                if (modal) modal.classList.remove('open');
+            };
+
+            document.addEventListener('click', function(e) {
+                var modal = document.getElementById('weather-modal');
+                if (modal && e.target === modal) {
+                    window.closeWeatherModal();
+                }
+            });
+
+            function initSearch() {
+                if (stoSearchInput) {
+                    stoSearchInput.addEventListener('input', function() {
+                        filterMarkers();
+                    });
+                }
+            }
+
+            function loadStoData() {
+                if (typeof google !== 'undefined' && google.script && google.script.run) {
+                    google.script.run
+                        .withSuccessHandler(function(data) {
+                            if (data && Array.isArray(data) && data.length > 0) {
+                                initStoData(data, "Google Sheets API (Apps Script)");
+                            } else {
+                                console.warn("GAS data empty or invalid, using embedded dataset");
+                                initStoData(EMBEDDED_STO_DATA, "Embedded dataset");
+                            }
+                        })
+                        .withFailureHandler(function(err) {
+                            console.warn("GAS fetch failed, using embedded dataset");
+                            initStoData(EMBEDDED_STO_DATA, "Embedded dataset");
+                        })
+                        .BMKG_getStoData();
+                } else {
+                    initStoData(EMBEDDED_STO_DATA, "Embedded dataset");
+                }
+            }
+
+            function initStoData(data, sourceName) {
+                console.log('STO Data initialized from: ' + sourceName);
+                if (!Array.isArray(data)) {
+                    console.error("Invalid STO data format, expected Array");
+                    return;
+                }
+
+                data.forEach(function(sto) {
+                    if (sto.name === 'MSB' && sto.province === 'SUMATERA BARAT') {
+                        if (!sto.lat || !sto.lon || sto.lat < -3.5 || sto.lon > 105) {
+                            console.log("Correcting MSB coordinates in client browser");
+                            sto.lat = -1.5969;
+                            sto.lon = 99.2136;
+                        }
+                    }
+                });
+
+                stoData = data;
+                generateLegend();
+                plotMarkers();
+                lucide.createIcons();
+                fetchAllStosWeatherForecast();
+            }
+
+            function generateLegend() {
+                var legendItemsEl = document.getElementById('legend-items');
+                if (!legendItemsEl) return;
+                legendItemsEl.innerHTML = '';
+                
+                var branchCounts = {};
+                stoData.forEach(function(sto) {
+                    branchCounts[sto.branch] = (branchCounts[sto.branch] || 0) + 1;
+                });
+
+                Object.keys(BRANCH_COLORS).forEach(function(branchName) {
+                    var count = branchCounts[branchName] || 0;
+                    var color = BRANCH_COLORS[branchName];
+                    
+                    var legendItem = document.createElement('div');
+                    legendItem.className = 'legend-item';
+                    legendItem.setAttribute('data-branch', branchName);
+                    legendItem.innerHTML = '<span class="legend-color-dot" style="color: ' + color + '; background-color: ' + color + '"></span>' +
+                                           '<span>' + branchName + '</span>' +
+                                           '<span class="legend-count">(' + count + ')</span>';
+                    
+                    legendItem.addEventListener('click', function() {
+                        var cardEl = document.querySelector('.branch-summary-card[data-branch-card="' + branchName + '"]');
+                        if (visibleBranches.has(branchName)) {
+                            visibleBranches.delete(branchName);
+                            legendItem.classList.add('dimmed');
+                            if (cardEl) cardEl.classList.add('dimmed');
+                        } else {
+                            visibleBranches.add(branchName);
+                            legendItem.classList.remove('dimmed');
+                            if (cardEl) cardEl.classList.remove('dimmed');
+                        }
+                        filterMarkers();
+                    });
+                    
+                    legendItemsEl.appendChild(legendItem);
+                });
+            }
+
+            var markersMap = new Map();
+
+            function plotMarkers() {
+                markersLayer.clearLayers();
+                markersMap.clear();
+
+                stoData.forEach(function(sto, index) {
+                    var color = BRANCH_COLORS[sto.branch] || DEFAULT_COLOR;
+                    
+                    var marker = L.circleMarker([sto.lat, sto.lon], {
+                        radius: 8,
+                        fillColor: color,
+                        color: '#ffffff',
+                        weight: 1.5,
+                        opacity: 0.95,
+                        fillOpacity: 0.85
+                    });
+
+                    marker.bindTooltip(sto.name, {
+                        permanent: false,
+                        direction: 'top',
+                        sticky: true,
+                        className: 'sto-tooltip'
+                    });
+
+                    marker.on('click', function() {
+                        handleStoClick(sto, marker);
+                    });
+
+                    marker.on('mouseover', function() {
+                        marker.setStyle({
+                            radius: 11,
+                            weight: 2.5,
+                            fillOpacity: 1.0
+                        });
+                    });
+
+                    marker.on('mouseout', function() {
+                        if (activeSto && activeSto.id === index) return;
+                        marker.setStyle({
+                            radius: 8,
+                            weight: 1.5,
+                            fillOpacity: 0.85
+                        });
+                    });
+
+                    markersMap.set(index, { marker: marker, sto: sto });
+                    
+                    if (visibleBranches.has(sto.branch)) {
+                        marker.addTo(markersLayer);
+                    }
+                });
+
+                if (stoData.length > 0) {
+                    var bounds = L.latLngBounds(stoData.map(function(s) { return [s.lat, s.lon]; }));
+                    map.fitBounds(bounds, { padding: [30, 30] });
+                }
+            }
+
+            function filterMarkers() {
+                var query = stoSearchInput ? stoSearchInput.value.toLowerCase().trim() : '';
+                
+                markersMap.forEach(function(val, id) {
+                    var marker = val.marker;
+                    var sto = val.sto;
+                    var matchesSearch = query === '' || 
+                                          sto.name.toLowerCase().indexOf(query) !== -1 || 
+                                          sto.branch.toLowerCase().indexOf(query) !== -1;
+                    var isBranchVisible = visibleBranches.has(sto.branch);
+                    
+                    if (matchesSearch && isBranchVisible) {
+                        if (!markersLayer.hasLayer(marker)) {
+                            marker.addTo(markersLayer);
+                        }
+                    } else {
+                        if (markersLayer.hasLayer(marker)) {
+                            markersLayer.removeLayer(marker);
+                        }
+                    }
+                });
+
+                if (allStosWeatherForecast) {
+                    renderConsolidatedTable();
+                }
+            }
+
+            function handleStoClick(sto, marker) {
+                var activeId = null;
+                markersMap.forEach(function(val, key) {
+                    if (val.sto.name === sto.name && val.sto.lat === sto.lat) {
+                        activeId = key;
+                    }
+                });
+
+                if (activeSto !== null) {
+                    var prevId = null;
+                    markersMap.forEach(function(val, key) {
+                        if (val.sto.name === activeSto.name && val.sto.lat === activeSto.lat) {
+                            prevId = key;
+                        }
+                    });
+                    if (prevId !== null) {
+                        var prev = markersMap.get(prevId);
+                        if (prev) {
+                            prev.marker.setStyle({
+                                radius: 8,
+                                weight: 1.5,
+                                fillOpacity: 0.85
+                            });
+                        }
+                    }
+                }
+
+                activeSto = {
+                    witel: sto.witel,
+                    cluster: sto.cluster,
+                    name: sto.name,
+                    province: sto.province,
+                    lat: sto.lat,
+                    lon: sto.lon,
+                    branch: sto.branch,
+                    id: activeId
+                };
+                
+                marker.setStyle({
+                    radius: 12,
+                    weight: 3,
+                    color: '#ffffff',
+                    fillOpacity: 1.0
+                });
+
+                map.setView([sto.lat, sto.lon], 9);
+
+                if (allStosWeatherForecast) {
+                    highlightStoInTable(sto.name);
+                }
+            }
+
+            function mergeBmkgetData(bmkg, meteo, aqi) {
+                var meteoHours = [];
+                if (meteo && meteo.hourly) {
+                    var times = meteo.hourly.time || [];
+                    for (var i = 0; i < times.length; i++) {
+                        var timeStr = times[i];
+                        var dateStr = timeStr.split('T')[0];
+                        var hourStr = timeStr.split('T')[1];
+
+                        var aqiIndex = aqi && aqi.hourly ? aqi.hourly.time.indexOf(timeStr) : -1;
+                        var pm25 = aqiIndex !== -1 ? aqi.hourly.pm2_5[aqiIndex] : null;
+                        var pm10 = aqiIndex !== -1 ? aqi.hourly.pm10[aqiIndex] : null;
+                        var usAqi = aqiIndex !== -1 ? aqi.hourly.us_aqi[aqiIndex] : null;
+
+                        meteoHours.push({
+                            time: timeStr,
+                            date: dateStr,
+                            hour: hourStr,
+                            temp: meteo.hourly.temperature_2m[i],
+                            humidity: meteo.hourly.relative_humidity_2m[i],
+                            weatherCode: meteo.hourly.weather_code[i],
+                            uvIndex: meteo.hourly.uv_index[i],
+                            pm25: pm25,
+                            pm10: pm10,
+                            aqi: usAqi
+                        });
+                    }
+                }
+
+                var bmkgHours = [];
+                if (meteo && meteo.hourly) {
+                    var times = meteo.hourly.time || [];
+                    for (var i = 0; i < times.length; i++) {
+                        var timeStr = times[i];
+                        var dateStr = timeStr.split('T')[0];
+                        var hourStr = timeStr.split('T')[1].substring(0, 5); // "HH:mm"
+                        
+                        if (dateStr === dates.yesterday.iso) continue;
+
+                        var hourInt = parseInt(hourStr.split(':')[0]);
+                        var bmkgHourInt = Math.floor(hourInt / 3) * 3;
+                        var bmkgHourStr = (bmkgHourInt < 10 ? '0' : '') + bmkgHourInt + ':00';
+
+                        var bmkgMatch = null;
+                        if (bmkg && bmkg.data && bmkg.data.length > 0) {
+                            var cuacaArray = bmkg.data[0].cuaca || [];
+                            cuacaArray.forEach(function(sublist) {
+                                if (!Array.isArray(sublist)) return;
+                                sublist.forEach(function(item) {
+                                    var itemLocalDt = item.local_datetime || '';
+                                    if (!itemLocalDt) return;
+                                    var itemDate = itemLocalDt.split(' ')[0];
+                                    var itemHour = itemLocalDt.split(' ')[1].substring(0, 5);
+                                    if (itemDate === dateStr && itemHour === bmkgHourStr) {
+                                        bmkgMatch = item;
+                                    }
+                                });
+                            });
+                        }
+
+                        var tempVal = bmkgMatch ? parseFloat(bmkgMatch.t) : meteo.hourly.temperature_2m[i];
+                        var humidityVal = bmkgMatch ? parseFloat(bmkgMatch.hu) : meteo.hourly.relative_humidity_2m[i];
+                        var weatherCodeVal = bmkgMatch ? parseInt(bmkgMatch.weather) : meteo.hourly.weather_code[i];
+                        var conditionText = bmkgMatch ? bmkgMatch.weather_desc : (WEATHER_INFO[weatherCodeVal] ? WEATHER_INFO[weatherCodeVal].text : "Cuaca");
+                        var iconUrl = bmkgMatch ? bmkgMatch.image : null;
+
+                        var aqiIndex = aqi && aqi.hourly ? aqi.hourly.time.indexOf(timeStr) : -1;
+                        var pm25 = aqiIndex !== -1 ? aqi.hourly.pm2_5[aqiIndex] : null;
+                        var pm10 = aqiIndex !== -1 ? aqi.hourly.pm10[aqiIndex] : null;
+                        var usAqi = aqiIndex !== -1 ? aqi.hourly.us_aqi[aqiIndex] : null;
+
+                        bmkgHours.push({
+                            date: dateStr,
+                            hour: hourStr,
+                            temp: tempVal,
+                            humidity: humidityVal,
+                            weatherCode: weatherCodeVal,
+                            condition: conditionText,
+                            iconUrl: iconUrl,
+                            uvIndex: meteo.hourly.uv_index[i],
+                            pm25: pm25,
+                            pm10: pm10,
+                            aqi: usAqi
+                        });
+                    }
+                }
+
+                return { meteoHours: meteoHours, bmkgHours: bmkgHours };
+            }
+
+            function renderWeatherData(mergedData) {
+                var targetDateIso = dates[activeDayFilter].iso;
+                var isYesterday = activeDayFilter === 'yesterday';
+
+                var dayMeteo = mergedData.meteoHours.filter(function(h) { return h.date === targetDateIso; });
+                if (dayMeteo.length === 0) {
+                    if (timelineListEl) {
+                        timelineListEl.innerHTML = '<div class="p-4 text-center text-muted">Data ramalan cuaca tidak tersedia untuk tanggal ini.</div>';
+                    }
+                    return;
+                }
+
+                var maxTemp = -999;
+                var minTemp = 999;
+                var maxAqi = 0;
+                var totalPm25 = 0;
+                var totalPm10 = 0;
+                var maxUv = 0;
+                var validAqiCount = 0;
+
+                dayMeteo.forEach(function(h) {
+                    if (h.temp > maxTemp) maxTemp = h.temp;
+                    if (h.temp < minTemp) minTemp = h.temp;
+                    if (h.uvIndex > maxUv) maxUv = h.uvIndex;
+                    if (h.aqi !== null) {
+                        if (h.aqi > maxAqi) maxAqi = h.aqi;
+                        totalPm25 += h.pm25;
+                        totalPm10 += h.pm10;
+                        validAqiCount++;
+                    }
+                });
+
+                var avgPm25 = validAqiCount > 0 ? (totalPm25 / validAqiCount).toFixed(1) : '-';
+                var avgPm10 = validAqiCount > 0 ? (totalPm10 / validAqiCount).toFixed(1) : '-';
+
+                if (tempRangeValEl) tempRangeValEl.innerText = minTemp.toFixed(1) + '°C - ' + maxTemp.toFixed(1) + '°C';
+                if (aqiValueEl) aqiValueEl.innerText = Math.round(maxAqi);
+                updateAqiUi(maxAqi, avgPm25, avgPm10);
+                if (uvValueEl) uvValueEl.innerText = maxUv.toFixed(1);
+                updateUvUi(maxUv);
+
+                if (isYesterday) {
+                    var titleText = document.getElementById('timeline-title-text');
+                    if (titleText) titleText.innerText = "Prakiraan Cuaca (Open-Meteo)";
+                    renderTimelineList(dayMeteo, false);
+                } else {
+                    var titleText = document.getElementById('timeline-title-text');
+                    if (titleText) titleText.innerText = "Prakiraan Cuaca Resmi (BMKG)";
+                    var dayBmkg = mergedData.bmkgHours.filter(function(h) { return h.date === targetDateIso; });
+                    renderTimelineList(dayBmkg.length > 0 ? dayBmkg : dayMeteo, dayBmkg.length > 0);
+                }
+            }
+
+            function updateAqiUi(aqi, pm25, pm10) {
+                var status = "";
+                var classColor = "";
+                var advice = "";
+                var bgColor = "";
+
+                if (aqi <= 50) {
+                    status = "SEHAT";
+                    classColor = "#10b981";
+                    bgColor = "rgba(16, 185, 129, 0.1)";
+                    advice = "Kualitas udara sangat baik. Udara bersih dan segar. Sangat aman dan disarankan untuk beraktivitas di luar ruangan.";
+                } else if (aqi <= 100) {
+                    status = "SEDANG";
+                    classColor = "#f59e0b";
+                    bgColor = "rgba(245, 158, 11, 0.1)";
+                    advice = "Kualitas udara sedang/cukup baik. Kelompok sensitif (seperti penderita asma) disarankan membatasi aktivitas fisik berat di luar ruangan.";
+                } else if (aqi <= 150) {
+                    status = "TIDAK SEHAT (Sensitif)";
+                    classColor = "#f97316";
+                    bgColor = "rgba(249, 115, 22, 0.1)";
+                    advice = "Kondisi tidak sehat bagi kelompok sensitif. Disarankan memakai masker saat di luar ruangan dan mengurangi aktivitas luar yang melelahkan.";
+                } else {
+                    status = "TIDAK SEHAT";
+                    classColor = "#ef4444";
+                    bgColor = "rgba(239, 68, 68, 0.1)";
+                    advice = "Kualitas udara buruk! Kurangi aktivitas luar ruangan. Gunakan masker standar (N95) jika terpaksa keluar untuk menjaga kesehatan pernapasan.";
+                }
+
+                if (aqiStatusEl) {
+                    aqiStatusEl.innerText = status;
+                    aqiStatusEl.style.color = classColor;
+                    aqiStatusEl.style.backgroundColor = bgColor;
+                }
+                if (aqiPollutantsEl) aqiPollutantsEl.innerText = 'PM2.5: ' + pm25 + ' µg/m³ | PM10: ' + pm10 + ' µg/m³';
+                if (aqiAdviceEl) aqiAdviceEl.innerText = advice;
+                if (aqiCard) aqiCard.style.borderLeft = '4px solid ' + classColor;
+            }
+
+            function updateUvUi(uv) {
+                var status = "";
+                var classColor = "";
+                var advice = "";
+                var bgColor = "";
+                var percentage = (Math.min(uv, 12) / 12) * 100;
+
+                if (uv <= 2) {
+                    status = "RENDAH";
+                    classColor = "#10b981";
+                    bgColor = "rgba(16, 185, 129, 0.1)";
+                    advice = "Tingkat bahaya radiasi UV rendah. Aman beraktivitas di luar tanpa perlindungan ekstra.";
+                } else if (uv <= 5) {
+                    status = "SEDANG";
+                    classColor = "#f59e0b";
+                    bgColor = "rgba(245, 158, 11, 0.1)";
+                    advice = "Bahaya sedang. Gunakan topi, kacamata hitam, tabir surya SPF 15+, dan cari tempat teduh pada tengah hari.";
+                } else if (uv <= 7) {
+                    status = "TINGGI";
+                    classColor = "#f97316";
+                    bgColor = "rgba(249, 115, 22, 0.1)";
+                    advice = "Radiasi tinggi! Gunakan pakaian tertutup, topi lebar, kacamata hitam, dan tabir surya SPF 30+. Batasi paparan matahari pukul 10:00-16:00.";
+                } else if (uv <= 10) {
+                    status = "SANGAT TINGGI";
+                    classColor = "#ef4444";
+                    bgColor = "rgba(239, 68, 68, 0.1)";
+                    advice = "Bahaya sangat tinggi! Kulit dan mata dapat terbakar dengan cepat. Perlindungan ekstra wajib digunakan. Hindari berjemur langsung.";
+                } else {
+                    status = "EKSTREM";
+                    classColor = "#8b5cf6";
+                    bgColor = "rgba(139, 92, 246, 0.1)";
+                    advice = "Bahaya ekstrem! Kulit tidak terlindungi dapat terbakar dalam hitungan menit. Sebaiknya hindari keluar ruangan pada siang hari.";
+                }
+
+                if (uvStatusEl) {
+                    uvStatusEl.innerText = status;
+                    uvStatusEl.style.color = classColor;
+                    uvStatusEl.style.backgroundColor = bgColor;
+                }
+                if (uvAdviceEl) uvAdviceEl.innerText = advice;
+                if (uvBarFill) uvBarFill.style.width = percentage + '%';
+                if (uvBarFill) uvBarFill.style.background = 'linear-gradient(to right, #06b6d4, ' + classColor + ')';
+                if (uvCard) uvCard.style.borderLeft = '4px solid ' + classColor;
+            }
+
+            function renderTimelineList(hours, isBmkg) {
+                if (!timelineListEl) return;
+                timelineListEl.innerHTML = '';
+                hours.forEach(function(h) {
+                    var iconHtml = '';
+                    var conditionText = '';
+                    
+                    if (isBmkg && h.iconUrl) {
+                        iconHtml = '<img src="' + h.iconUrl + '" alt="' + h.condition + '" style="width: 24px; height: 24px; filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.15))">';
+                        conditionText = h.condition;
+                    } else {
+                        var weather = WEATHER_INFO[h.weatherCode] || { text: "Cuaca Tidak Diketahui", icon: "help-circle" };
+                        iconHtml = '<i data-lucide="' + weather.icon + '"></i>';
+                        conditionText = weather.text;
+                    }
+
+                    var animClass = '';
+                    var condLower = conditionText.toLowerCase();
+                    if (condLower.indexOf('cerah') !== -1) {
+                        animClass = 'anim-spin';
+                    } else if (condLower.indexOf('hujan') !== -1 || condLower.indexOf('petir') !== -1 || condLower.indexOf('gerimis') !== -1 || condLower.indexOf('badai') !== -1) {
+                        animClass = 'anim-bounce';
+                    } else if (condLower.indexOf('berawan') !== -1 || condLower.indexOf('mendung') !== -1) {
+                        animClass = 'anim-pulse';
+                    } else if (condLower.indexOf('kabut') !== -1 || condLower.indexOf('angin') !== -1) {
+                        animClass = 'anim-drift';
+                    }
+
+                    var row = document.createElement('tr');
+                    row.className = 'weather-table-row';
+                    row.innerHTML = '<td class="time-cell">' + h.hour + '</td>' +
+                                    '<td class="icon-cell ' + animClass + '">' + iconHtml + '</td>' +
+                                    '<td class="condition-cell" title="' + conditionText + '">' + conditionText + '</td>' +
+                                    '<td class="temp-cell">' + h.temp.toFixed(1) + '°C</td>' +
+                                    '<td class="humidity-cell"><i data-lucide="droplet" class="table-droplet-icon"></i>' + h.humidity + '%</td>';
+                    timelineListEl.appendChild(row);
+                });
+                lucide.createIcons();
+            }
+        });
+    </script>
+    
+    <div class="weather-modal" id="weather-modal">
+        <div class="weather-modal-content">
+            <div class="modal-header">
+                <h4 id="modal-sto-title">STO AGAM - BSO</h4>
+                <button class="modal-close" onclick="window.closeWeatherModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-weather-icon-large" id="modal-weather-icon">☀️</div>
+                <div class="modal-weather-title" id="modal-weather-title">Cerah</div>
+                <div class="modal-weather-time" id="modal-weather-time">Hari Ini | Jam 12:00</div>
+                <div class="modal-weather-details" id="modal-weather-details">
+                    Cuaca cerah sangat mendukung aktivitas di luar ruangan. Tidak ada potensi hujan dalam waktu dekat.
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard & Form Program Kerja Branch</title>
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons CDN for beautiful UI iconography -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-accent: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent-light: rgba(99, 102, 241, 0.15);
+      --bg: #0b1329;
+      --card-bg: rgba(18, 28, 56, 0.75);
+      --card-bg-solid: #132042;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.08);
+      --success: #10b981;
+      --success-light: rgba(16, 185, 129, 0.15);
+      --warning: #f59e0b;
+      --warning-light: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --danger-light: rgba(239, 68, 68, 0.15);
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.15);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.25);
+      --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.35);
+      --radius: 12px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding-bottom: 40px;
+    }
+
+    header {
+      background: rgba(18, 28, 56, 0.65);
+      color: var(--text);
+      padding: 10px 14px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      margin-top: 12px;
+      margin-bottom: 20px;
+      position: static;
+      z-index: 100;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-logo h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .header-logo span {
+      font-size: 12px;
+      background: var(--primary-accent);
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    .nav-tabs {
+      display: flex;
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      gap: 6px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.7);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .tab-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #ffffff;
+      box-shadow: 0 3px 8px rgba(99, 102, 241, 0.25);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 32px auto;
+      padding: 0 24px;
+    }
+
+    /* Views */
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards & Grids */
+    .grid-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .card-stat {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: var(--transition);
+    }
+
+    .card-stat:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stat-info h3 {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .stat-info .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-primary { background-color: var(--accent-light); color: var(--primary-accent); }
+    .icon-success { background-color: var(--success-light); color: var(--success); }
+    .icon-warning { background-color: var(--warning-light); color: var(--warning); }
+    .icon-danger { background-color: var(--danger-light); color: var(--danger); }
+
+    /* Dashboard Layout */
+    .grid-charts {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-charts {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .card-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-body {
+      padding: 24px;
+    }
+
+    /* Filters */
+    .filters-bar {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-group label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    select, input, textarea {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--text);
+      background-color: var(--card-bg-solid);
+      outline: none;
+      transition: var(--transition);
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--primary-accent);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: rgba(255, 255, 255, 0.04);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-hijau { background-color: var(--success-light); color: var(--success); }
+    .badge-kuning { background-color: var(--warning-light); color: var(--warning); }
+    .badge-merah { background-color: var(--danger-light); color: var(--danger); }
+    .badge-gray { background-color: rgba(148, 163, 184, 0.15); color: var(--text-muted); }
+
+    /* Form Styles */
+    .form-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .form-header-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 24px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+    }
+
+    .form-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+      border-left: 5px solid var(--primary-accent);
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .form-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .form-card-header {
+      padding: 18px 24px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .form-card-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .pilar-tag {
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .form-card-body {
+      padding: 24px;
+    }
+
+    .context-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .context-block h4 {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .context-block p {
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .input-group label span.required {
+      color: var(--danger);
+    }
+
+    textarea.form-textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .full-width {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 768px) {
+      .context-row, .input-grid {
+        grid-template-columns: 1fr;
+      }
+      .full-width {
+        grid-column: span 1;
+      }
+    }
+
+    .btn-submit-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 16px;
+      margin-top: 32px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .btn-primary {
+      background-color: var(--primary-accent);
+      color: #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.14);
+    }
+
+    /* Modal / Loading Spinner */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(7, 13, 30, 0.75);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .loading-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .spinner-box {
+      background: var(--card-bg-solid);
+      padding: 32px;
+      border-radius: var(--radius);
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      max-width: 320px;
+    }
+
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border-left-color: var(--primary-accent);
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Notifications */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 16px 24px;
+      border-radius: 8px;
+      background: var(--card-bg-solid);
+      box-shadow: var(--shadow-lg);
+      border-left: 5px solid var(--primary-accent);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 1000;
+    }
+
+    .toast.active {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast-success { border-left-color: var(--success); }
+    .toast-error { border-left-color: var(--danger); }
+
+    /* Alert / Issue Section */
+    .issue-card {
+      background: rgba(245, 158, 11, 0.08);
+      border-left: 4px solid var(--warning);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .issue-card.danger {
+      background: rgba(239, 68, 68, 0.08);
+      border-left-color: var(--danger);
+    }
+
+    .issue-content h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .issue-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .issue-desc {
+      font-size: 13.5px;
+      margin-bottom: 8px;
+    }
+
+    .issue-plan {
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header style="justify-content:flex-end;">
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchView('dashboard')">
+        <i data-lucide="layout-dashboard"></i> Dashboard Monitoring
+      </button>
+      <button class="tab-btn" onclick="switchView('form')">
+        <i data-lucide="clipboard-edit"></i> Form Isian Manager
+      </button>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- VIEW 1: DASHBOARD MONITORING -->
+    <div id="dashboard-view" class="view active">
+      
+      <!-- Filters -->
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label for="db-branch-filter"><i data-lucide="map-pin"></i> Branch:</label>
+          <select id="db-branch-filter" onchange="refreshDashboard()">
+            <option value="All">Semua Branch</option>
+            <option value="Batam">Batam</option>
+            <option value="Bukittinggi">Bukittinggi</option>
+            <option value="Dumai">Dumai</option>
+            <option value="Padang">Padang</option>
+            <option value="Pekanbaru">Pekanbaru</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="db-week-filter"><i data-lucide="calendar"></i> Minggu:</label>
+          <select id="db-week-filter" onchange="refreshDashboard()">
+            <option value="All">Semua Minggu</option>
+            <option value="M1">Minggu 1</option>
+            <option value="M2">Minggu 2</option>
+            <option value="M3">Minggu 3</option>
+            <option value="M4">Minggu 4</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary" onclick="loadDashboardData()" style="padding: 8px 16px;">
+          <i data-lucide="refresh-cw"></i> Sync Data
+        </button>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid-stats">
+        <div class="card-stat">
+          <div class="stat-info">
+            <h3>Overall Completion</h3>
+            <div class="value" id="stat-overall-pct">0%</div>
+          </div>
+          <div class="stat-icon icon-primary">
+            <i data-lucide="check-circle-2"></i>
+          </div>
+        </div>
+        
+        <div class="card-stat">
+          <div class="stat-info">
+            <h3>Status Hijau (Sesuai)</h3>
+            <div class="value" id="stat-hijau-count">0</div>
+          </div>
+          <div class="stat-icon icon-success">
+            <i data-lucide="smile"></i>
+          </div>
+        </div>
+
+        <div class="card-stat">
+          <div class="stat-info">
+            <h3>Status Kuning (Risiko)</h3>
+            <div class="value" id="stat-kuning-count">0</div>
+          </div>
+          <div class="stat-icon icon-warning">
+            <i data-lucide="alert-triangle"></i>
+          </div>
+        </div>
+
+        <div class="card-stat">
+          <div class="stat-info">
+            <h3>Status Merah (Eskalasi)</h3>
+            <div class="value" id="stat-merah-count">0</div>
+          </div>
+          <div class="stat-icon icon-danger">
+            <i data-lucide="x-octagon"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid-charts">
+        <div class="card">
+          <div class="card-header">
+            <h2><i data-lucide="trending-up"></i> Tren Penyelesaian Program Kerja per Branch (%)</h2>
+          </div>
+          <div class="card-body">
+            <canvas id="trendChart" style="max-height: 320px;"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2><i data-lucide="pie-chart"></i> Distribusi Status Aktivitas</h2>
+          </div>
+          <div class="card-body" style="display: flex; justify-content: center; align-items: center;">
+            <canvas id="statusChart" style="max-height: 320px;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Layout: Branch KPI Cards & Escalations -->
+      <div class="grid-charts">
+        
+        <!-- Table: Branch Overview -->
+        <div class="card">
+          <div class="card-header">
+            <h2><i data-lucide="list-todo"></i> Summary Capaian Mingguan & KPI per Branch</h2>
+          </div>
+          <div class="card-body">
+            <div class="table-container">
+              <table id="branches-summary-table">
+                <thead>
+                  <tr>
+                    <th>Branch</th>
+                    <th>KPI Baseline & Target</th>
+                    <th>M1 Progress</th>
+                    <th>M2 Progress</th>
+                    <th>M3 Progress</th>
+                    <th>M4 Progress</th>
+                    <th>Total Progress</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Filled via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel: Escalation List -->
+        <div class="card">
+          <div class="card-header" style="background-color: rgba(239, 68, 68, 0.08); border-bottom: 1px solid rgba(239, 68, 68, 0.2);">
+            <h2 style="color: var(--danger);"><i data-lucide="alert-octagon"></i> Monitoring Isu Kritis (Kuning / Merah)</h2>
+          </div>
+          <div class="card-body" style="max-height: 480px; overflow-y: auto;" id="escalations-container">
+            <!-- Filled via JS -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- VIEW 2: FORM ISIAN MANAGER BRANCH -->
+    <div id="form-view" class="view">
+      <div class="form-container">
+        
+        <!-- Form Header Selection -->
+        <div class="form-header-bar">
+          <div class="input-group">
+            <label for="form-branch-select">Pilih Branch <span class="required">*</span></label>
+            <select id="form-branch-select" onchange="loadFormPrograms()">
+              <option value="">-- Pilih Branch --</option>
+              <option value="Batam">Batam</option>
+              <option value="Bukittinggi">Bukittinggi</option>
+              <option value="Dumai">Dumai</option>
+              <option value="Padang">Padang</option>
+              <option value="Pekanbaru">Pekanbaru</option>
+            </select>
+          </div>
+          
+          <div class="input-group">
+            <label for="form-week-select">Pilih Minggu <span class="required">*</span></label>
+            <select id="form-week-select" onchange="loadFormPrograms()">
+              <option value="">-- Pilih Minggu --</option>
+              <option value="M1">Minggu 1 (14 - 20 Juli 2026)</option>
+              <option value="M2">Minggu 2 (21 - 27 Juli 2026)</option>
+              <option value="M3">Minggu 3 (28 Juli - 3 Agt 2026)</option>
+              <option value="M4">Minggu 4 (4 - 10 Agustus 2026)</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="form-submitter">Nama Submitter / Manager <span class="required">*</span></label>
+            <input type="text" id="form-submitter" placeholder="Contoh: Manager Batam - Andi">
+          </div>
+        </div>
+
+        <!-- Form Programs Inputs Box -->
+        <div id="form-programs-box">
+          <div class="card">
+            <div class="card-body empty-state" id="form-empty-message">
+              Silakan pilih Branch dan Minggu di atas untuk memuat daftar program kerja.
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="btn-submit-bar" id="form-action-bar" style="display: none;">
+          <button class="btn btn-secondary" onclick="resetForm()">
+            <i data-lucide="rotate-ccw"></i> Reset
+          </button>
+          <button class="btn btn-primary" onclick="submitForm()">
+            <i data-lucide="send"></i> Simpan Laporan Mingguan
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LOADING OVERLAY -->
+  <div id="loading" class="loading-overlay">
+    <div class="spinner-box">
+      <div class="spinner"></div>
+      <p style="font-weight: 500;" id="loading-text">Sedang memuat data...</p>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast">
+    <i data-lucide="info" id="toast-icon"></i>
+    <p id="toast-message">Notifikasi</p>
+  </div>
+
+  <!-- MAIN SCRIPT -->
+  <script>
+    // Global variable containing the raw spreadsheet data structure
+    let dashboardRawData = null;
+    let currentLoadedPrograms = [];
+    
+    // Charts objects so we can destroy them before recreation
+    let trendChartObj = null;
+    let statusChartObj = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+      lucide.createIcons();
+      loadDashboardData();
+      
+      // Auto-load submitter name if exists
+      const savedSubmitter = localStorage.getItem("branch_manager_submitter");
+      if (savedSubmitter) {
+        document.getElementById("form-submitter").value = savedSubmitter;
+      }
+    });
+
+    function switchView(viewName) {
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+      
+      if (viewName === 'dashboard') {
+        document.querySelector(".tab-btn[onclick*='dashboard']").classList.add("active");
+        document.getElementById("dashboard-view").classList.add("active");
+        loadDashboardData();
+      } else {
+        document.querySelector(".tab-btn[onclick*='form']").classList.add("active");
+        document.getElementById("form-view").classList.add("active");
+      }
+    }
+
+    function showLoading(text) {
+      document.getElementById("loading-text").innerText = text || "Sedang memuat...";
+      document.getElementById("loading").classList.add("active");
+    }
+
+    function hideLoading() {
+      document.getElementById("loading").classList.remove("active");
+    }
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById("toast");
+      const toastMsg = document.getElementById("toast-message");
+      const toastIcon = document.getElementById("toast-icon");
+      
+      toast.className = 'toast active';
+      toastMsg.innerText = message;
+      
+      if (type === 'success') {
+        toast.classList.add("toast-success");
+        toastIcon.setAttribute("data-lucide", "check-circle");
+        toastIcon.style.color = "var(--success)";
+      } else if (type === 'error') {
+        toast.classList.add("toast-error");
+        toastIcon.setAttribute("data-lucide", "alert-circle");
+        toastIcon.style.color = "var(--danger)";
+      } else {
+        toastIcon.setAttribute("data-lucide", "info");
+        toastIcon.style.color = "var(--primary-accent)";
+      }
+      
+      lucide.createIcons();
+      
+      setTimeout(() => {
+        toast.classList.remove("active");
+      }, 4000);
+    }
+
+    // Call Google Apps Script backend to get dashboard data
+    function loadDashboardData() {
+      showLoading("Sinkronisasi data dari Spreadsheet...");
+      
+      // Fallback data for local development/testing outside Google Apps Script environment
+      if (typeof google === 'undefined' || !google.script) {
+        console.warn("Google Apps Script API is not available. Using mockup data.");
+        generateMockupDashboard();
+        hideLoading();
+        return;
+      }
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          dashboardRawData = response;
+          refreshDashboard();
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showToast("Gagal memuat data dashboard: " + error.toString(), "error");
+        })
+        .PKB_getDashboardData();
+    }
+
+    function refreshDashboard() {
+      if (!dashboardRawData) return;
+      
+      const filterBranch = document.getElementById("db-branch-filter").value;
+      const filterWeek = document.getElementById("db-week-filter").value;
+      
+      let overallExpected = 0;
+      let overallHijau = 0;
+      let overallKuning = 0;
+      let overallMerah = 0;
+      let overallBelumDiisi = 0;
+      
+      let escalationsHtml = "";
+      let tableRowsHtml = "";
+      
+      // Data structures for charts
+      const chartTrendData = {
+        weeks: ['M1', 'M2', 'M3', 'M4'],
+        branches: {}
+      };
+      
+      dashboardRawData.branchesSummary.forEach(b => {
+        chartTrendData.branches[b.branch] = [0, 0, 0, 0];
+        
+        // Populate branch table rows
+        let kpiText = b.kpis.map(k => `<strong>${k.kpi}</strong> (Target: ${k.target}, Baseline: ${k.baseline})`).join("<br>");
+        if (!kpiText) kpiText = "<span style='color: #94a3b8; font-style: italic;'>No KPIs configured</span>";
+        
+        let mColText = [];
+        b.weeklyStats.forEach((wStat, idx) => {
+          let badgeClass = 'badge-gray';
+          if (wStat.expected > 0) {
+            let fillPercent = ((wStat.hijau + wStat.kuning) / wStat.expected) * 100;
+            if (fillPercent >= 80) badgeClass = 'badge-hijau';
+            else if (fillPercent >= 40) badgeClass = 'badge-kuning';
+            else badgeClass = 'badge-merah';
+            
+            mColText.push(`<span class="badge ${badgeClass}">${wStat.completionRate}%<br>(${wStat.hijau}H / ${wStat.kuning}K / ${wStat.merah}M)</span>`);
+          } else {
+            mColText.push(`-`);
+          }
+          
+          // Store trend data for line charts
+          chartTrendData.branches[b.branch][idx] = wStat.completionRate;
+        });
+        
+        let overallBadge = 'badge-gray';
+        if (b.overallCompletionRate >= 80) overallBadge = 'badge-hijau';
+        else if (b.overallCompletionRate >= 40) overallBadge = 'badge-kuning';
+        else overallBadge = 'badge-merah';
+        
+        tableRowsHtml += `
+          <tr>
+            <td><strong>${b.branch}</strong></td>
+            <td style="font-size: 12.5px; max-width: 350px;">${kpiText}</td>
+            <td>${mColText[0]}</td>
+            <td>${mColText[1]}</td>
+            <td>${mColText[2]}</td>
+            <td>${mColText[3]}</td>
+            <td><span class="badge ${overallBadge}" style="font-size: 13.5px; padding: 6px 12px; font-weight: 700;">${b.overallCompletionRate}%</span></td>
+          </tr>
+        `;
+        
+        // Sum counts for filter evaluations
+        b.weeklyStats.forEach(wStat => {
+          // Check matching filters
+          const branchMatches = (filterBranch === 'All' || filterBranch === b.branch);
+          const weekMatches = (filterWeek === 'All' || filterWeek === wStat.week);
+          
+          if (branchMatches && weekMatches) {
+            overallExpected += wStat.expected;
+            overallHijau += wStat.hijau;
+            overallKuning += wStat.kuning;
+            overallMerah += wStat.merah;
+            overallBelumDiisi += wStat.belumDiisi;
+          }
+        });
+        
+        // Compile Critical Issues (Kuning & Merah)
+        b.updates.forEach(upd => {
+          const branchMatches = (filterBranch === 'All' || filterBranch === b.branch);
+          const weekMatches = (filterWeek === 'All' || filterWeek === upd.week);
+          
+          if (branchMatches && weekMatches && (upd.status === 'Kuning' || upd.status === 'Merah')) {
+            let isDanger = upd.status === 'Merah';
+            escalationsHtml += `
+              <div class="issue-card ${isDanger ? 'danger' : ''}">
+                <div class="issue-content">
+                  <h4 style="color: ${isDanger ? 'var(--danger)' : 'var(--warning)'};">
+                    [${upd.status.toUpperCase()}] ${b.branch} - ${upd.week} - Program ${upd.programNum}
+                  </h4>
+                  <div class="issue-meta">
+                    <span><i data-lucide="tag" style="width: 12px; height: 12px; display: inline; vertical-align: middle;"></i> Pilar: ${upd.pilar}</span>
+                    <span><i data-lucide="clock" style="width: 12px; height: 12px; display: inline; vertical-align: middle;"></i> Updated: ${upd.timestamp}</span>
+                  </div>
+                  <p class="issue-desc">
+                    <strong>Rencana:</strong> ${upd.rencanaAktivitas}<br>
+                    <strong>Realisasi:</strong> ${upd.realisasi}
+                  </p>
+                  <p class="issue-desc" style="margin-top: 4px; color: #ef4444; font-weight: 500;">
+                    <strong>Kendala:</strong> ${upd.kendala || 'Tidak ada kendala ditulis'}
+                  </p>
+                  <div class="issue-plan">
+                    <strong>Tindak Lanjut:</strong> ${upd.tindakLanjut || '-'}<br>
+                    <strong>Improvisasi:</strong> ${upd.improvisasi || '-'}
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        });
+      });
+      
+      // Update Top statistics
+      const overallCompletionPct = overallExpected > 0 ? ((overallHijau + overallKuning) / overallExpected) * 100 : 0;
+      document.getElementById("stat-overall-pct").innerText = overallCompletionPct.toFixed(1) + "%";
+      document.getElementById("stat-hijau-count").innerText = overallHijau;
+      document.getElementById("stat-kuning-count").innerText = overallKuning;
+      document.getElementById("stat-merah-count").innerText = overallMerah;
+      
+      // Update Tables
+      document.getElementById("branches-summary-table").querySelector("tbody").innerHTML = tableRowsHtml;
+      
+      // Update Escalation container
+      const escContainer = document.getElementById("escalations-container");
+      if (escalationsHtml) {
+        escContainer.innerHTML = escalationsHtml;
+      } else {
+        escContainer.innerHTML = `<div class="empty-state">Tidak ada isu kritis (Kuning/Merah) ditemukan untuk filter terpilih.</div>`;
+      }
+      
+      lucide.createIcons();
+      
+      // Render Charts
+      renderCharts(chartTrendData, {
+        hijau: overallHijau,
+        kuning: overallKuning,
+        merah: overallMerah,
+        belumDiisi: overallBelumDiisi
+      });
+    }
+
+    function renderCharts(trendData, statusSummary) {
+      // 1. Destroy old charts if exist
+      if (trendChartObj) trendChartObj.destroy();
+      if (statusChartObj) statusChartObj.destroy();
+      
+      // 2. Trend Line Chart
+      const ctxTrend = document.getElementById('trendChart').getContext('2d');
+      
+      // Define colors for each branch
+      const colors = {
+        'Batam': '#3b82f6',      // Blue
+        'Bukittinggi': '#10b981', // Emerald
+        'Dumai': '#f59e0b',       // Amber
+        'Padang': '#8b5cf6',      // Violet
+        'Pekanbaru': '#ec4899'    // Pink
+      };
+      
+      const datasets = Object.keys(trendData.branches).map(branch => {
+        return {
+          label: branch,
+          data: trendData.branches[branch],
+          borderColor: colors[branch] || '#64748b',
+          backgroundColor: (colors[branch] || '#64748b') + '15',
+          borderWidth: 3,
+          tension: 0.25,
+          fill: false,
+          pointRadius: 5,
+          pointHoverRadius: 7
+        };
+      });
+      
+      trendChartObj = new Chart(ctxTrend, {
+        type: 'line',
+        data: {
+          labels: ['M1', 'M2', 'M3', 'M4'],
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Outfit', size: 12 } } },
+            tooltip: { bodyFont: { family: 'Outfit' }, titleFont: { family: 'Outfit' } }
+          },
+          scales: {
+            y: {
+              min: 0,
+              max: 100,
+              title: { display: true, text: 'Completion Rate (%)', font: { family: 'Outfit', weight: 'bold' } },
+              grid: { color: 'rgba(255, 255, 255, 0.08)' },
+              ticks: { font: { family: 'Outfit' } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'Outfit' } }
+            }
+          }
+        }
+      });
+      
+      // 3. Status Distribution Doughnut Chart
+      const ctxStatus = document.getElementById('statusChart').getContext('2d');
+      statusChartObj = new Chart(ctxStatus, {
+        type: 'doughnut',
+        data: {
+          labels: ['Hijau (Sesuai)', 'Kuning (Risiko)', 'Merah (Eskalasi)', 'Belum Diisi'],
+          datasets: [{
+            data: [statusSummary.hijau, statusSummary.kuning, statusSummary.merah, statusSummary.belumDiisi],
+            backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#64748b'],
+            borderWidth: 2,
+            borderColor: '#132042'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Outfit', size: 12 } } },
+            tooltip: { bodyFont: { family: 'Outfit' }, titleFont: { family: 'Outfit' } }
+          }
+        }
+      });
+    }
+
+    // Dynamic program generator for the weekly forms
+    function loadFormPrograms() {
+      const branch = document.getElementById("form-branch-select").value;
+      const week = document.getElementById("form-week-select").value;
+      const box = document.getElementById("form-programs-box");
+      const actionBar = document.getElementById("form-action-bar");
+      
+      if (!branch || !week) {
+        box.innerHTML = `
+          <div class="card">
+            <div class="card-body empty-state" id="form-empty-message">
+              Silakan pilih Branch dan Minggu di atas untuk memuat daftar program kerja.
+            </div>
+          </div>
+        `;
+        actionBar.style.display = "none";
+        return;
+      }
+      
+      showLoading("Memuat data program kerja branch...");
+      
+      // Mockup load for offline testing
+      if (typeof google === 'undefined' || !google.script) {
+        console.warn("Google Apps Script is not available. Loading mockup form.");
+        generateMockupForm(branch, week);
+        actionBar.style.display = "flex";
+        hideLoading();
+        return;
+      }
+      
+      google.script.run
+        .withSuccessHandler(function(programs) {
+          currentLoadedPrograms = programs;
+          
+          if (!programs || programs.length === 0) {
+            box.innerHTML = `
+              <div class="card">
+                <div class="card-body empty-state" style="color: var(--danger);">
+                  Tidak ada program kerja yang dikonfigurasi untuk Branch ${branch} pada Minggu ${week}.
+                </div>
+              </div>
+            `;
+            actionBar.style.display = "none";
+          } else {
+            let html = "";
+            programs.forEach((prog, index) => {
+              // Pre-fill fields if they already exist in database
+              const realisasi = prog.realisasi || "";
+              const status = prog.status || "";
+              const kpi = prog.capaianKpi || "";
+              const kendala = prog.kendala || "";
+              const tindakLanjut = prog.tindakLanjut || "";
+              const improvisasi = prog.improvisasi || "";
+              
+              html += `
+                <div class="form-card" id="card-prog-${prog.programNum}">
+                  <div class="form-card-header">
+                    <h3>Program ${prog.programNum}: ${prog.programTitle}</h3>
+                    <span class="pilar-tag">${prog.pilar}</span>
+                  </div>
+                  
+                  <div class="form-card-body">
+                    <!-- Context Display -->
+                    <div class="context-row">
+                      <div class="context-block">
+                        <h4>Rencana Aktivitas M1-M4 (Target PDF)</h4>
+                        <p style="font-weight: 500; color: var(--primary-accent);">${prog.rencanaAktivitas || '-'}</p>
+                      </div>
+                      <div class="context-block">
+                        <h4>Target / Output Program</h4>
+                        <p>${prog.targetOutput || '-'}</p>
+                        ${prog.uicMonitoring ? `<p style="margin-top: 4px; font-size: 12px; color: var(--text-muted);"><strong>Monitoring:</strong> ${prog.uicMonitoring}</p>` : ''}
+                      </div>
+                    </div>
+                    
+                    <!-- Inputs -->
+                    <div class="input-grid">
+                      <div class="input-group full-width">
+                        <label for="input-realisasi-${prog.programNum}">Realisasi Aktivitas <span class="required">*</span></label>
+                        <textarea id="input-realisasi-${prog.programNum}" class="form-textarea" placeholder="Tuliskan realisasi pengerjaan aktivitas program..." required>${realisasi}</textarea>
+                      </div>
+                      
+                      <div class="input-group">
+                        <label for="input-status-${prog.programNum}">Status Capaian <span class="required">*</span></label>
+                        <select id="input-status-${prog.programNum}" onchange="toggleFormAlert('${prog.programNum}')" required>
+                          <option value="">-- Pilih Status --</option>
+                          <option value="Hijau" ${status === 'Hijau' ? 'selected' : ''}>HIJAU (Sesuai Rencana / Tercapai)</option>
+                          <option value="Kuning" ${status === 'Kuning' ? 'selected' : ''}>KUNING (Berjalan tapi Berisiko / Terkendala)</option>
+                          <option value="Merah" ${status === 'Merah' ? 'selected' : ''}>MERAH (Meleset / Butuh Eskalasi & Support)</option>
+                        </select>
+                      </div>
+                      
+                      <div class="input-group">
+                        <label for="input-kpi-${prog.programNum}">Capaian KPI <span class="required">*</span></label>
+                        <input type="text" id="input-kpi-${prog.programNum}" placeholder="Masukkan pencapaian numerik atau kondisi metrik..." value="${kpi}" required>
+                      </div>
+                      
+                      <!-- Conditional Fields for Kuning / Merah -->
+                      <div class="input-group full-width border-alert" id="alert-fields-${prog.programNum}" style="display: ${ (status === 'Kuning' || status === 'Merah') ? 'flex' : 'none' }; background: rgba(245, 158, 11, 0.08); padding: 16px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.25); flex-direction: column; gap: 12px; margin-top: 8px;">
+                        <h4 style="font-size: 13px; color: var(--warning); display: flex; align-items: center; gap: 6px; font-weight: 700;">
+                          <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i> Laporan Kendala & Hambatan
+                        </h4>
+                        
+                        <div class="input-group">
+                          <label for="input-kendala-${prog.programNum}">Kendala / Hambatan Utama <span class="required">*</span></label>
+                          <textarea id="input-kendala-${prog.programNum}" class="form-textarea" placeholder="Tuliskan penyebab keterlambatan/hambatan secara rinci...">${kendala}</textarea>
+                        </div>
+                        
+                        <div class="input-group">
+                          <label for="input-tindaklanjut-${prog.programNum}">Rencana Tindak Lanjut <span class="required">*</span></label>
+                          <textarea id="input-tindaklanjut-${prog.programNum}" class="form-textarea" placeholder="Langkah perbaikan/resolusi minggu depan...">${tindakLanjut}</textarea>
+                        </div>
+                      </div>
+
+                      <div class="input-group full-width">
+                        <label for="input-improvisasi-${prog.programNum}">Improvisasi Lapangan & Monitoring Tambahan <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(Opsional)</span></label>
+                        <textarea id="input-improvisasi-${prog.programNum}" class="form-textarea" placeholder="Ide perbaikan lokal, inovasi kerja teknisi, atau mekanisme monitoring baru untuk mempercepat target...">${improvisasi}</textarea>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              `;
+            });
+            
+            box.innerHTML = html;
+            actionBar.style.display = "flex";
+            lucide.createIcons();
+            
+            // Set dynamic border colors based on existing loaded statuses
+            programs.forEach(prog => {{
+              if (prog.status) toggleFormAlert(prog.programNum);
+            }});
+          }
+          
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showToast("Gagal memuat daftar program: " + error.toString(), "error");
+        })
+        .PKB_getProgramsForBranchAndWeek(branch, week);
+    }
+
+    function toggleFormAlert(progNum) {
+      const statusSelect = document.getElementById(`input-status-${progNum}`);
+      const alertFields = document.getElementById(`alert-fields-${progNum}`);
+      const card = document.getElementById(`card-prog-${progNum}`);
+      const val = statusSelect.value;
+      
+      if (val === 'Kuning' || val === 'Merah') {
+        alertFields.style.display = "flex";
+        card.style.borderLeftColor = val === 'Merah' ? 'var(--danger)' : 'var(--warning)';
+      } else {
+        alertFields.style.display = "none";
+        card.style.borderLeftColor = val === 'Hijau' ? 'var(--success)' : 'var(--primary-accent)';
+      }
+      
+      lucide.createIcons();
+    }
+
+    function resetForm() {
+      if (confirm("Apakah Anda yakin ingin mengosongkan semua isian form program kerja ini?")) {
+        loadFormPrograms();
+      }
+    }
+
+    function submitForm() {
+      const branch = document.getElementById("form-branch-select").value;
+      const week = document.getElementById("form-week-select").value;
+      const submitter = document.getElementById("form-submitter").value.trim();
+      
+      if (!branch || !week) {
+        showToast("Branch dan Minggu wajib diisi!", "error");
+        return;
+      }
+      if (!submitter) {
+        showToast("Nama Submitter/Manager wajib diisi!", "error");
+        document.getElementById("form-submitter").focus();
+        return;
+      }
+      
+      // Save submitter name locally for future updates
+      localStorage.setItem("branch_manager_submitter", submitter);
+      
+      // Construct payload and validate
+      let updates = [];
+      let isValid = true;
+      let validationMessage = "";
+      
+      for (let i = 0; i < currentLoadedPrograms.length; i++) {
+        const p = currentLoadedPrograms[i];
+        const progNum = p.programNum;
+        
+        const realisasi = document.getElementById(`input-realisasi-${progNum}`).value.trim();
+        const status = document.getElementById(`input-status-${progNum}`).value;
+        const capaianKpi = document.getElementById(`input-kpi-${progNum}`).value.trim();
+        const improvisasi = document.getElementById(`input-improvisasi-${progNum}`).value.trim();
+        
+        let kendala = "";
+        let tindakLanjut = "";
+        
+        if (!realisasi) {
+          isValid = false;
+          validationMessage = `Realisasi pada Program ${progNum} wajib diisi!`;
+          document.getElementById(`input-realisasi-${progNum}`).focus();
+          break;
+        }
+        
+        if (!status) {
+          isValid = false;
+          validationMessage = `Status pada Program ${progNum} wajib dipilih!`;
+          document.getElementById(`input-status-${progNum}`).focus();
+          break;
+        }
+        
+        if (!capaianKpi) {
+          isValid = false;
+          validationMessage = `Capaian KPI pada Program ${progNum} wajib diisi!`;
+          document.getElementById(`input-kpi-${progNum}`).focus();
+          break;
+        }
+        
+        if (status === 'Kuning' || status === 'Merah') {
+          kendala = document.getElementById(`input-kendala-${progNum}`).value.trim();
+          tindakLanjut = document.getElementById(`input-tindaklanjut-${progNum}`).value.trim();
+          
+          if (!kendala) {
+            isValid = false;
+            validationMessage = `Kendala wajib dilaporkan untuk Program ${progNum} karena berstatus ${status}!`;
+            document.getElementById(`input-kendala-${progNum}`).focus();
+            break;
+          }
+          if (!tindakLanjut) {
+            isValid = false;
+            validationMessage = `Rencana Tindak Lanjut wajib diisi untuk Program ${progNum} karena berstatus ${status}!`;
+            document.getElementById(`input-tindaklanjut-${progNum}`).focus();
+            break;
+          }
+        }
+        
+        updates.push({
+          programNum: progNum,
+          programTitle: p.programTitle,
+          pilar: p.pilar,
+          rencanaAktivitas: p.rencanaAktivitas,
+          realisasi: realisasi,
+          status: status,
+          capaianKpi: capaianKpi,
+          kendala: kendala,
+          tindakLanjut: tindakLanjut,
+          improvisasi: improvisasi
+        });
+      }
+      
+      if (!isValid) {
+        showToast(validationMessage, "error");
+        return;
+      }
+      
+      showLoading("Menyimpan laporan ke Spreadsheet...");
+      
+      google.script.run
+        .withSuccessHandler(function(res) {
+          hideLoading();
+          if (res.success) {
+            showToast(res.message, "success");
+            setTimeout(() => {
+              switchView('dashboard');
+            }, 1000);
+          } else {
+            showToast("Gagal menyimpan: " + res.message, "error");
+          }
+        })
+        .withFailureHandler(function(err) {
+          hideLoading();
+          showToast("Koneksi gagal: " + err.toString(), "error");
+        })
+        .PKB_submitWeeklyUpdate(branch, week, updates, submitter);
+    }
+
+    // Local mockup generator to allow UI checking without bound environment
+    function generateMockupDashboard() {
+      dashboardRawData = {
+        timestamp: "2026-07-15 22:30:00",
+        branchesSummary: [
+          {
+            branch: "Batam",
+            kpis: [
+              { kpi: "Service Availability", target: "≥ 98,52%", baseline: "SQM baru 40% closed by teknisi" },
+              { kpi: "SUGAR DATIN", target: "≥ 90,00%", baseline: "RCA: Gamas BB & ODP" }
+            ],
+            overallCompletionRate: 75.0,
+            weeklyStats: [
+              { week: "M1", expected: 6, hijau: 5, kuning: 1, merah: 0, belumDiisi: 0, completionRate: 100.0 },
+              { week: "M2", expected: 6, hijau: 4, kuning: 1, merah: 1, belumDiisi: 0, completionRate: 83.3 },
+              { week: "M3", expected: 6, hijau: 3, kuning: 2, merah: 0, belumDiisi: 1, completionRate: 83.3 },
+              { week: "M4", expected: 6, hijau: 0, kuning: 0, merah: 0, belumDiisi: 6, completionRate: 0.0 }
+            ],
+            updates: [
+              {
+                week: "M2",
+                programNum: "1",
+                programTitle: "Penguatan Kapasitas & Kedisiplinan Teknisi",
+                pilar: "People",
+                rencanaAktivitas: "Implementasi shifting tetap + refreshment SOP",
+                realisasi: "Telah disusun shift teknisi namun kendala kehadiran shift malam.",
+                status: "Kuning",
+                capaianKpi: "SQM closed 75%",
+                kendala: "Teknisi lembur kelelahan, shift malam kurang standby.",
+                tindakLanjut: "Penataan ulang jadwal dan standby on-call.",
+                improvisasi: "Membuat backup roster cadangan.",
+                timestamp: "2026-07-15 10:15"
+              },
+              {
+                week: "M2",
+                programNum: "6",
+                programTitle: "Preventive Maintenance Alpro Terdegradasi",
+                pilar: "Tools/Infra",
+                rencanaAktivitas: "Eksekusi kunisasi dan penggantian tiang rawan",
+                realisasi: "Pekerjaan terhenti karena kelangkaan material tiang.",
+                status: "Merah",
+                capaianKpi: "Penyelesaian PM 20%",
+                kendala: "Keterlambatan supply logistik dari area pusat.",
+                tindakLanjut: "Eskalasi ke Log Ops Area 1.",
+                improvisasi: "Mengalihkan sementara teknisi untuk merapikan dropcore reboundary.",
+                timestamp: "2026-07-15 10:20"
+              }
+            ]
+          },
+          {
+            branch: "Pekanbaru",
+            kpis: [
+              { kpi: "TTI 1x24 Jam HSI", target: "≥ 93,00%", baseline: "3 district terendah se-Area" }
+            ],
+            overallCompletionRate: 62.5,
+            weeklyStats: [
+              { week: "M1", expected: 8, hijau: 6, kuning: 2, merah: 0, belumDiisi: 0, completionRate: 100.0 },
+              { week: "M2", expected: 8, hijau: 4, kuning: 2, merah: 1, belumDiisi: 1, completionRate: 75.0 },
+              { week: "M3", expected: 8, hijau: 0, kuning: 0, merah: 0, belumDiisi: 8, completionRate: 0.0 },
+              { week: "M4", expected: 8, hijau: 0, kuning: 0, merah: 0, belumDiisi: 8, completionRate: 0.0 }
+            ],
+            updates: [
+              {
+                week: "M2",
+                programNum: "2",
+                programTitle: "Penambahan/Realokasi Resource Teknisi",
+                pilar: "People",
+                rencanaAktivitas: "Persetujuan & realokasi deploy resource ke STO PBB",
+                realisasi: "Persetujuan deploy resource ditolak manajemen regional.",
+                status: "Merah",
+                capaianKpi: "0 teknisi ditambahkan",
+                kendala: "Anggaran penambahan resource dibekukan.",
+                tindakLanjut: "Eskalasi permohonan ke GM Sumbagteng.",
+                improvisasi: "Membagi beban teknisi dari STO terdekat secara bergantian (sharing resources).",
+                timestamp: "2026-07-15 11:30"
+              }
+            ]
+          }
+        ]
+      };
+      refreshDashboard();
+    }
+
+    function generateMockupForm(branch, week) {
+      currentLoadedPrograms = [
+        {
+          programNum: "1",
+          programTitle: "Penguatan Kapasitas & Kedisiplinan Teknisi",
+          pilar: "People",
+          rencanaAktivitas: "Assessment sebaran beban kerja & susun shifting 24/7",
+          targetOutput: "Kepatuhan shifting 24/7, closing SQM > 80%"
+        },
+        {
+          programNum: "4",
+          programTitle: "Percepatan Housekeeping Order & Reporting Saldo",
+          pilar: "Process",
+          rencanaAktivitas: "Cleansing data saldo order PI/FO & TTR FFG",
+          targetOutput: "Penurunan sisa order < 24 jam"
+        }
+      ];
+      
+      const box = document.getElementById("form-programs-box");
+      let html = "";
+      currentLoadedPrograms.forEach(prog => {
+        html += `
+          <div class="form-card" id="card-prog-${prog.programNum}">
+            <div class="form-card-header">
+              <h3>Program ${prog.programNum}: ${prog.programTitle}</h3>
+              <span class="pilar-tag">${prog.pilar}</span>
+            </div>
+            <div class="form-card-body">
+              <div class="context-row">
+                <div class="context-block">
+                  <h4>Rencana Aktivitas M1-M4</h4>
+                  <p style="font-weight: 500; color: var(--primary-accent);">${prog.rencanaAktivitas}</p>
+                </div>
+                <div class="context-block">
+                  <h4>Target / Output Program</h4>
+                  <p>${prog.targetOutput}</p>
+                </div>
+              </div>
+              <div class="input-grid">
+                <div class="input-group full-width">
+                  <label for="input-realisasi-${prog.programNum}">Realisasi Aktivitas <span class="required">*</span></label>
+                  <textarea id="input-realisasi-${prog.programNum}" class="form-textarea" placeholder="Tuliskan realisasi..." required></textarea>
+                </div>
+                <div class="input-group">
+                  <label for="input-status-${prog.programNum}">Status Capaian <span class="required">*</span></label>
+                  <select id="input-status-${prog.programNum}" onchange="toggleFormAlert('${prog.programNum}')" required>
+                    <option value="">-- Pilih Status --</option>
+                    <option value="Hijau">HIJAU (Sesuai Rencana)</option>
+                    <option value="Kuning">KUNING (Berjalan tapi Berisiko)</option>
+                    <option value="Merah">MERAH (Tidak Berjalan/Butuh Eskalasi)</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label for="input-kpi-${prog.programNum}">Capaian KPI <span class="required">*</span></label>
+                  <input type="text" id="input-kpi-${prog.programNum}" placeholder="Masukkan metrik capaian..." required>
+                </div>
+                <div class="input-group full-width border-alert" id="alert-fields-${prog.programNum}" style="display: none; background: rgba(245, 158, 11, 0.08); padding: 16px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.25); flex-direction: column; gap: 12px; margin-top: 8px;">
+                  <h4 style="color: var(--warning); font-weight: 700;">Laporan Kendala</h4>
+                  <div class="input-group">
+                    <label for="input-kendala-${prog.programNum}">Kendala Utama <span class="required">*</span></label>
+                    <textarea id="input-kendala-${prog.programNum}" class="form-textarea"></textarea>
+                  </div>
+                  <div class="input-group">
+                    <label for="input-tindaklanjut-${prog.programNum}">Tindak Lanjut <span class="required">*</span></label>
+                    <textarea id="input-tindaklanjut-${prog.programNum}" class="form-textarea"></textarea>
+                  </div>
+                </div>
+                <div class="input-group full-width">
+                  <label for="input-improvisasi-${prog.programNum}">Improvisasi Lapangan & Monitoring Tambahan</label>
+                  <textarea id="input-improvisasi-${prog.programNum}" class="form-textarea"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      box.innerHTML = html;
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>
